@@ -18,6 +18,7 @@
                             <th>Dosya Adı</th>
                             <th>Boyut (byte)</th>
                             <th>İndir</th>
+                            <th>Sil</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -25,15 +26,57 @@
                         <tr>
                             <td>{{ f.name }}</td>
                             <td>{{ f.size }}</td>
-                            <td><a href="/config/{{ host }}/backups/download/{{ f.name }}" class="btn btn-sm btn-outline-primary">⬇ İndir</a></td>
+                            <td>
+                                <a href="/config/{{ host }}/backups/download/{{ f.name }}" class="btn btn-sm btn-outline-primary">⬇ İndir</a>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger"
+                                    onclick="silOnay('{{ f.name }}', '/config/{{ host }}/backups/delete/{{ f.name }}')">
+                                    🗑 Sil
+                                </button>
+                            </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="3" class="text-center text-muted py-4">Henüz backup alınmamış</td></tr>
+                        <tr><td colspan="4" class="text-center text-muted py-4">Henüz backup alınmamış</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <!-- Silme Onay Modalı -->
+    <div class="modal fade" id="silModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">⚠️ Backup Silinecek</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Aşağıdaki backup dosyasını silmek istediğinizden emin misiniz?</p>
+                    <div class="alert alert-secondary py-2">
+                        <small id="modal-dosya-adi" class="text-break"></small>
+                    </div>
+                    <p class="text-danger mb-0"><small>Bu işlem geri alınamaz.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <form id="silForm" method="post">
+                        <button type="submit" class="btn btn-danger">Evet, Sil</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function silOnay(dosyaAdi, url) {
+            document.getElementById('modal-dosya-adi').textContent = dosyaAdi;
+            document.getElementById('silForm').action = url;
+            new bootstrap.Modal(document.getElementById('silModal')).show();
+        }
+    </script>
 </body>
 </html>

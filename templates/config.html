@@ -5,21 +5,9 @@
     <title>{{ host }} - Config Yönetimi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .btn-outline-dark:hover {
-            background-color: #212529;
-            color: #fff;
-            transition: 0.2s ease-in-out;
-        }
-        .btn-outline-secondary:hover {
-            background-color: #6c757d;
-            color: #fff;
-            transition: 0.2s ease-in-out;
-        }
-        .btn-outline-primary:hover {
-            background-color: #0d6efd;
-            color: #fff;
-            transition: 0.2s ease-in-out;
-        }
+        .btn-outline-dark:hover { background-color: #212529; color: #fff; transition: 0.2s; }
+        .btn-outline-secondary:hover { background-color: #6c757d; color: #fff; transition: 0.2s; }
+        .btn-outline-primary:hover { background-color: #0d6efd; color: #fff; transition: 0.2s; }
     </style>
 </head>
 <body class="bg-light">
@@ -28,12 +16,13 @@
         <h1>Config Yönetimi: {{ host }}</h1>
 
         {% if request.args.get('backup') == 'success' %}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show">
             ✅ Backup başarıyla alındı.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endif %}
 
+        <!-- Mevcut Config -->
         <div class="card shadow-sm mb-4">
             <div class="card-header">Mevcut Config</div>
             <div class="card-body">
@@ -41,6 +30,7 @@
             </div>
         </div>
 
+        <!-- Backup Butonları -->
         <div class="d-flex gap-2 mb-4">
             <form action="/config/{{ host }}/backup" method="post">
                 <button type="submit" class="btn btn-outline-secondary">📦 Backup Al</button>
@@ -48,26 +38,97 @@
             <a href="/config/{{ host }}/backups" class="btn btn-outline-dark">📂 Backup Geçmişini Gör</a>
         </div>
 
+        <!-- Yeni Config + Butonlar -->
         <div class="card shadow-sm mb-4">
             <div class="card-header">Yeni Config Önerisi</div>
             <div class="card-body">
-                <form action="/config/{{ host }}/preview" method="post">
-                    <textarea name="new_config" class="form-control mb-3" rows="8">{{ new_config or current_config }}</textarea>
-                    <button type="submit" class="btn btn-primary">🔍 Önizle (Diff)</button>
-                </form>
+                <textarea name="new_config" id="new_config" class="form-control mb-3" rows="8">{{ new_config or current_config }}</textarea>
+                <div class="d-flex gap-2">
+                    <button onclick="submitForm('/config/{{ host }}/preview')" class="btn btn-primary">🔍 Önizle (Diff)</button>
+                    <button onclick="submitForm('/config/{{ host }}/simulate')" class="btn btn-warning">⚙️ Simüle Et</button>
+                    {% if diff and diff != "Değişiklik yok" %}
+                    <button onclick="submitForm('/config/{{ host }}/apply')" class="btn btn-success">✅ Onayla ve Uygula</button>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
+        <!-- Diff Sonucu -->
         {% if diff %}
-        <div class="card shadow-sm">
+        <div class="card shadow-sm mb-4">
             <div class="card-header">Diff Sonucu</div>
             <div class="card-body">
                 <pre class="bg-dark text-white p-3 rounded">{{ diff }}</pre>
             </div>
         </div>
         {% endif %}
+
+        <!-- Simülasyon Sonucu -->
+        {% if sim_interfaces is defined %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">⚙️ Simülasyon Sonucu</div>
+            <div class="card-body">
+
+                {% if sim_errors %}
+                <div class="alert alert-danger">
+                    <strong>⚠️ Hata(lar) tespit edildi:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for err in sim_errors %}
+                        <li>{{ err | safe }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if sim_interfaces %}
+                <p class="text-muted mb-2"><small>Bu config uygulanırsa interface durumları şöyle olacak:</small></p>
+                <table class="table table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Interface</th>
+                            <th>Durum</th>
+                            <th>IP Adresi</th>
+                            <th>Açıklama</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for name, info in sim_interfaces.items() %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td>
+                                {% if info.status == "up" %}
+                                    <span class="badge bg-success">up</span>
+                                {% else %}
+                                    <span class="badge bg-danger">down</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ info.ip or "-" }}</td>
+                            <td>{{ info.description or "-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
+    <form id="hidden-form" method="post">
+        <input type="hidden" name="new_config" id="hidden_config">
+    </form>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function submitForm(url) {
+            const config = document.getElementById('new_config').value;
+            const form = document.getElementById('hidden-form');
+            document.getElementById('hidden_config').value = config;
+            form.action = url;
+            form.submit();
+        }
+    </script>
 </body>
 </html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Audit Log</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="/" class="btn btn-link ps-0">← Geri</a>
+                <h1 class="mb-0">📋 Audit Log</h1>
+            </div>
+            {% if logs %}
+            <button class="btn btn-outline-danger"
+                onclick="temizleOnay()">🗑 Tüm Logu Temizle</button>
+            {% endif %}
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Tarih</th>
+                            <th>Host</th>
+                            <th>İşlem</th>
+                            <th>Detay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log[0] }}</td>
+                            <td>{{ log[1] }}</td>
+                            <td>{{ log[2] }}</td>
+                            <td>
+                                {% if log[3] == "BACKUP" %}
+                                    <span class="badge bg-primary">{{ log[3] }}</span>
+                                {% elif log[3] == "CONFIG DIFF" %}
+                                    <span class="badge bg-warning text-dark">{{ log[3] }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ log[3] }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log[4] }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Henüz kayıt yok</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Temizle Onay Modalı -->
+    <div class="modal fade" id="temizleModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">⚠️ Log Temizlenecek</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Tüm audit log kayıtlarını silmek istediğinizden emin misiniz?</p>
+                    <p class="text-danger mb-0"><small>Bu işlem geri alınamaz.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <form action="/audit/temizle" method="post">
+                        <button type="submit" class="btn btn-danger">Evet, Temizle</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function temizleOnay() {
+            new bootstrap.Modal(document.getElementById('temizleModal')).show();
+        }
+    </script>
+</body>
+</html>

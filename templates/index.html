@@ -9,14 +9,15 @@
     <div class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>📡 Ağ Cihazları</h1>
-            <div class="text-end">
+            <div class="d-flex gap-2 align-items-center">
+                <a href="/audit" class="btn btn-outline-secondary">📋 Audit Log</a>
                 <button class="btn btn-primary" onclick="taraButton()">🔄 Şimdi Tara</button>
-                <div class="text-muted small mt-1">Son tarama: <span id="last-scan">{{ last_scan }}</span></div>
+                <div class="text-muted small">Son tarama: <span id="last-scan">{{ last_scan }}</span></div>
             </div>
         </div>
 
         <div class="card shadow-sm">
-            <div class="card-body">
+            <div class="card-body p-0">
                 <table class="table table-hover align-middle mb-0" id="device-table">
                     <thead class="table-dark">
                         <tr>
@@ -24,7 +25,7 @@
                             <th>Hostname</th>
                             <th>Model</th>
                             <th>Uptime</th>
-                            <th>Detay</th>
+                            <th>İşlemler</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -37,6 +38,7 @@
                             <td>
                                 <a href="/device/{{ d.host }}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                 <a href="/config/{{ d.host }}" class="btn btn-sm btn-outline-secondary">Config</a>
+                                <a href="/compliance/{{ d.host }}" class="btn btn-sm btn-outline-success"> Compliance</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -46,6 +48,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function taraButton() {
             fetch('/api/devices')
@@ -63,6 +66,7 @@
                                 <td>
                                     <a href="/device/${d.host}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                     <a href="/config/${d.host}" class="btn btn-sm btn-outline-secondary">Config</a>
+                                    <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success"> Compliance</a>
                                 </td>
                             </tr>`;
                     });
