@@ -9,40 +9,58 @@ RULES = [
         "id": 2,
         "kural": "SSH aktif olmalı",
         "aciklama": "Uzak yönetim için SSH kullanılmalı",
-        "kontrol": lambda config: "transport input ssh" in config.lower() or "ip ssh version" in config.lower()
+        "kontrol": lambda config: "ip ssh version" in config.lower()
     },
     {
         "id": 3,
         "kural": "Hostname varsayılan olmamalı",
         "aciklama": "Cihaz hostname'i 'Router' veya 'Switch' olmamalı",
-        "kontrol": lambda config: not any(
-            f"hostname {h}" in config.lower()
-            for h in ["router", "switch"]
+        "kontrol": lambda config: (
+            "hostname router" not in config.lower() and
+            "hostname switch" not in config.lower()
         )
     },
     {
         "id": 4,
-        "kural": "Enable secret tanımlı olmalı",
-        "aciklama": "Cihazda şifreli enable password bulunmalı",
-        "kontrol": lambda config: "enable secret" in config.lower()
+        "kural": "Kullanıcı tanımlı olmalı",
+        "aciklama": "En az bir lokal kullanıcı tanımlanmış olmalı",
+        "kontrol": lambda config: "username" in config.lower()
     },
     {
         "id": 5,
-        "kural": "NTP sunucusu tanımlı olmalı",
-        "aciklama": "Zaman senkronizasyonu için NTP ayarlanmalı",
-        "kontrol": lambda config: "ntp server" in config.lower()
+        "kural": "HTTP server kapalı olmalı",
+        "aciklama": "Güvenlik gereği HTTP server devre dışı bırakılmalı",
+        "kontrol": lambda config: "no ip http server" in config.lower()
     },
     {
         "id": 6,
-        "kural": "Şifreler şifreli tutulmalı",
-        "aciklama": "service password-encryption aktif olmalı",
-        "kontrol": lambda config: "service password-encryption" in config.lower()
+        "kural": "CEF aktif olmalı",
+        "aciklama": "Performans için Cisco Express Forwarding aktif olmalı",
+        "kontrol": lambda config: "ip cef" in config.lower()
     },
     {
         "id": 7,
-        "kural": "Logging aktif olmalı",
-        "aciklama": "Cihaz logları bir sunucuya gönderilmeli",
-        "kontrol": lambda config: "logging" in config.lower()
+        "kural": "Domain adı tanımlı olmalı",
+        "aciklama": "SSH için ip domain-name tanımlı olmalı",
+        "kontrol": lambda config: "ip domain name" in config.lower() or "ip domain-name" in config.lower()
+    },
+    {
+        "id": 8,
+        "kural": "VTY login local olmalı",
+        "aciklama": "VTY hatlarında login local kullanılmalı",
+        "kontrol": lambda config: "login local" in config.lower()
+    },
+    {
+        "id": 9,
+        "kural": "Service password-encryption aktif olmalı",
+        "aciklama": "Şifrelerin şifreli saklanması için aktif olmalı",
+        "kontrol": lambda config: "no service password-encryption" not in config.lower()
+    },
+    {
+        "id": 10,
+        "kural": "IP domain lookup kapalı olmalı",
+        "aciklama": "Gereksiz DNS sorgularını önlemek için kapalı olmalı",
+        "kontrol": lambda config: "no ip domain lookup" in config.lower()
     },
 ]
 

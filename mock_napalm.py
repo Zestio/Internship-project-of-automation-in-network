@@ -70,7 +70,19 @@ interface GigabitEthernet0/0
 }
 
 def get_config(host):
-    return FAKE_CONFIGS.get(host, FAKE_RUNNING_CONFIG)
+    from mock_device import get_napalm_device, DEVICES
+    d = next((d for d in DEVICES if d["display_host"] == host), None)
+    if not d:
+        return ""
+    try:
+        dev = get_napalm_device(d["port"])
+        dev.open()
+        config = dev.get_config()["running"]
+        dev.close()
+        return config
+    except Exception as e:
+        print(f"Config HATA: {e}")
+        return ""
 
 def backup_config(host):
     if not os.path.exists(BACKUP_DIR):
