@@ -6,10 +6,45 @@ from mock_device import get_all_devices, get_facts, get_interfaces
 from mock_napalm import get_config, backup_config, compare_config
 from mock_napalm import get_config, backup_config, compare_config, simulate_config
 from compliance import compliance_kontrol
+import threading
+import time
 
 
 app = Flask(__name__)
 init_db()
+# Monitoring state
+alerts = []
+alerts_lock = threading.Lock()
+
+def monitor_devices():
+    while True:
+        time.sleep(30)
+        try:
+            devices = get_all_devices()
+            new_alerts = []
+            for d in devices:
+                if d["hostname"] == "Ulaşılamıyor":
+                    new_alerts.append({
+                        "host": d["host"],
+                        "mesaj": f"{d['host']} cihazına ulaşılamıyor!",
+                        "tip": "danger"
+                    })
+                    continue
+                for iface, info in d.get("interfaces", {}).items():
+                    if info["status"] == "down":
+                        new_alerts.append({
+                            "host": d["host"],
+                            "mesaj": f"{d['hostname']} - {iface} interface DOWN!",
+                            "tip": "warning"
+                        })
+            with alerts_lock:
+                alerts.clear()
+                alerts.extend(new_alerts)
+        except Exception as e:
+            print(f"Monitor HATA: {e}")
+
+monitor_thread = threading.Thread(target=monitor_devices, daemon=True)
+monitor_thread.start()
 current_devices = get_all_devices()
 last_scan_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -25,6 +60,11 @@ def config_apply(host):
     mock_napalm.FAKE_RUNNING_CONFIG = new_config
     log_ekle(host, "CONFIG APPLY", "Config değişikliği uygulandı")
     return redirect(f'/config/{host}?backup=success')
+
+@app.route('/api/alerts')
+def get_alerts():
+    with alerts_lock:
+        return jsonify(list(alerts))
 
 @app.route('/topology')
 def topology():

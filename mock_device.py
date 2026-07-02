@@ -15,7 +15,8 @@ def get_napalm_device(port):
             'port': port,
             'transport': 'telnet',
             'secret': "cisco123",
-            'global_delay_factor': 2,
+            'global_delay_factor': 4,
+            'read_timeout_override': 60,
             'fast_cli': False,
         }
     )
