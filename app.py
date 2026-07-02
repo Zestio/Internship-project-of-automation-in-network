@@ -26,6 +26,11 @@ def config_apply(host):
     log_ekle(host, "CONFIG APPLY", "Config değişikliği uygulandı")
     return redirect(f'/config/{host}?backup=success')
 
+@app.route('/topology')
+def topology():
+    devices = get_all_devices()
+    return render_template('topology.html', devices=devices)
+
 @app.route('/compliance/<host>')
 def compliance(host):
     from mock_napalm import get_config
