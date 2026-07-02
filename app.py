@@ -8,10 +8,12 @@ from mock_napalm import get_config, backup_config, compare_config, simulate_conf
 from compliance import compliance_kontrol
 import threading
 import time
+from mock_device import get_all_devices, get_facts, get_interfaces, start_cache
 
 
 app = Flask(__name__)
 init_db()
+start_cache()
 # Monitoring state
 alerts = []
 alerts_lock = threading.Lock()
@@ -69,7 +71,15 @@ def get_alerts():
 @app.route('/topology')
 def topology():
     devices = get_all_devices()
-    return render_template('topology.html', devices=devices)
+    # Config'i topoloji sayfasına gönderme
+    simple_devices = [{
+        "host": d["host"],
+        "hostname": d["hostname"],
+        "model": d["model"],
+        "uptime": d["uptime"],
+        "vendor": d.get("vendor", ""),
+    } for d in devices]
+    return render_template('topology.html', devices=simple_devices)
 
 @app.route('/compliance/<host>')
 def compliance(host):

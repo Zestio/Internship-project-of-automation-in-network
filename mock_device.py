@@ -1,9 +1,14 @@
 from napalm import get_network_driver
+import threading
+import time
 
 DEVICES = [
     {"host": "192.168.56.101", "port": 5000, "display_host": "192.168.100.1"},
-   
 ]
+
+_cache = []
+_cache_lock = threading.Lock()
+_cache_ready = threading.Event()
 
 def get_napalm_device(port):
     driver = get_network_driver('ios')
@@ -15,12 +20,12 @@ def get_napalm_device(port):
             'port': port,
             'transport': 'telnet',
             'secret': "cisco123",
-            'global_delay_factor': 4,
-            'read_timeout_override': 60,
+            'global_delay_factor': 5,
+            'read_timeout_override': 120,
             'fast_cli': False,
+            'session_timeout': 120,
         }
     )
-
 def fetch_one(d):
     try:
         dev = get_napalm_device(d["port"])
@@ -28,6 +33,7 @@ def fetch_one(d):
         facts = dev.get_facts()
         interfaces = dev.get_interfaces()
         ip_data = dev.get_interfaces_ip()
+        config = dev.get_config()["running"]
         dev.close()
 
         result_interfaces = {}
@@ -43,6 +49,7 @@ def fetch_one(d):
 
         facts["host"] = d["display_host"]
         facts["interfaces"] = result_interfaces
+        facts["config"] = config
         return facts
 
     except Exception as e:
@@ -54,18 +61,47 @@ def fetch_one(d):
             "uptime": "-",
             "vendor": "-",
             "os_version": "-",
-            "interfaces": {}
+            "interfaces": {},
+            "config": ""
         }
 
+def _refresh_cache():
+    global _cache
+    while True:
+        new_data = [fetch_one(d) for d in DEVICES]
+        with _cache_lock:
+            _cache = new_data
+        _cache_ready.set()
+        time.sleep(60)
+
+def start_cache():
+    t = threading.Thread(target=_refresh_cache, daemon=True)
+    t.start()
+    print("Cache yükleniyor, lütfen bekleyin...")
+    _cache_ready.wait()
+    print("Cache hazır, site açılıyor.")
+
 def get_all_devices():
-    return [fetch_one(d) for d in DEVICES]
+    with _cache_lock:
+        return list(_cache)
 
 def get_facts(host):
-    for d in DEVICES:
-        if d["display_host"] == host:
-            return fetch_one(d)
+    with _cache_lock:
+        for d in _cache:
+            if d["host"] == host:
+                return d
     return {}
 
 def get_interfaces(host):
-    facts = get_facts(host)
-    return facts.get("interfaces", {})
+    with _cache_lock:
+        for d in _cache:
+            if d["host"] == host:
+                return d.get("interfaces", {})
+    return {}
+
+def get_cached_config(host):
+    with _cache_lock:
+        for d in _cache:
+            if d["host"] == host:
+                return d.get("config", "")
+    return ""
