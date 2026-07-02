@@ -1,6 +1,6 @@
 #  NAPALM Tabanlı Multi-Vendor Ağ Yönetim Platformu
 
-Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cisco ağ cihazını merkezi bir web arayüzü üzerinden yönetmeyi, konfigürasyon değişikliklerini güvenli şekilde önizlemeyi ve güvenlik denetimi yapmayı sağlar.
+Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cisco ağ cihazını merkezi bir web arayüzü üzerinden yönetmeyi, konfigürasyon değişikliklerini güvenli şekilde önizlemeyi, güvenlik denetimi yapmayı ve gerçek zamanlı izleme sağlamayı hedeflemektedir.
 
 ---
 
@@ -8,11 +8,14 @@ Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cis
 
 - **Cihaz Envanteri** — Tüm ağ cihazlarının (hostname, model, uptime, interface durumu) tek panelden görüntülenmesi
 - **Anlık Tarama** — "Şimdi Tara" butonu ile cihaz verilerinin canlı olarak güncellenmesi
+- **Gerçek Zamanlı İzleme** — Arka planda otomatik cihaz kontrolü, interface down veya cihaza ulaşılamaz durumunda anında uyarı
+- **Ağ Topoloji Haritası** — Cihazların birbirine bağlantısını görsel olarak gösteren interaktif harita
 - **Config Yönetimi** — Mevcut konfigürasyonu görüntüleme, değişiklik önizleme (diff), simülasyon ve uygulama
-- **Config Simülasyonu** — Yeni config uygulanmadan önce interface durumlarını simüle etme, hatalı komutları tespit etme
+- **Config Simülasyonu** — Yeni config uygulanmadan önce interface durumlarını simüle etme, hatalı komutları tespit etme (IP, interface, syntax validasyonu)
 - **Backup Sistemi** — Tarih damgalı otomatik yedekleme, yedek listeleme, indirme ve silme
-- **Compliance Denetimi** — Cihazların güvenlik standartlarına (SSH, NTP, logging vb.) uygunluğunu otomatik kontrol etme
+- **Compliance Denetimi** — Cihazların güvenlik standartlarına (SSH, NTP, logging, HTTP kapalı vb.) uygunluğunu otomatik kontrol etme
 - **Audit Log** — Tüm işlemlerin (backup, config değişikliği) tarih/saat/host bilgisiyle kayıt altına alınması
+- **Cache Sistemi** — Arka planda periyodik veri güncelleme, sayfa açılışlarında anlık yanıt
 - **Multi-Vendor Mimari** — NAPALM kütüphanesi sayesinde Cisco IOS/IOS-XR/NX-OS, Juniper ve Arista cihazlarına aynı kod tabanından bağlanabilme
 
 ---
@@ -24,31 +27,32 @@ Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cis
 | Python 3 | Ana programlama dili |
 | Flask | Web framework (backend) |
 | NAPALM | Multi-vendor ağ otomasyon kütüphanesi |
-| Netmiko | SSH tabanlı cihaz bağlantısı |
+| Netmiko | SSH/Telnet tabanlı cihaz bağlantısı |
 | SQLite | Audit log veritabanı |
 | Bootstrap 5 | Frontend UI framework |
-| GNS3 | Ağ simülasyon ortamı |
+| vis.js | Ağ topoloji görselleştirme |
+| GNS3 | Ağ simülasyon ortamı (Cisco 3725) |
 
 ---
 
 ##  Proje Yapısı
 staj-projesi/
 ├── app.py              # Flask backend, route'lar
-├── mock_device.py      # Cihaz envanter fonksiyonları (mock/gerçek)
-├── mock_napalm.py      # Config yönetimi fonksiyonları (mock/gerçek)
+├── mock_device.py      # Cihaz envanter fonksiyonları (NAPALM/cache)
+├── mock_napalm.py      # Config yönetimi fonksiyonları
 ├── compliance.py       # Güvenlik denetim kuralları
 ├── database.py         # SQLite audit log işlemleri
 ├── templates/
-│   ├── index.html      # Ana sayfa - cihaz listesi
+│   ├── index.html      # Ana sayfa - cihaz listesi + uyarılar
 │   ├── detail.html     # Cihaz detay sayfası
 │   ├── config.html     # Config yönetimi sayfası
 │   ├── backups.html    # Backup geçmişi sayfası
 │   ├── compliance.html # Compliance denetim sayfası
-│   └── audit.html      # Audit log sayfası
+│   ├── audit.html      # Audit log sayfası
+│   └── topology.html   # Ağ topoloji haritası
 ├── backups/            # Config yedek dosyaları
 ├── audit.db            # SQLite veritabanı
 └── requirements.txt    # Python bağımlılıkları
-
 ---
 
 ##  Kurulum
@@ -71,17 +75,21 @@ source venv/bin/activate     # Mac/Linux
 pip install -r requirements.txt
 ```
 
-**4. Uygulamayı başlat:**
+**4. GNS3 ortamını hazırla:**
+- GNS3 ve VirtualBox kurulu olmalı
+- Cisco 3725 IOS image GNS3'e eklenmiş olmalı
+- En az 1 router çalışıyor olmalı (SSH/Telnet aktif)
+
+**5. Uygulamayı başlat:**
 ```bash
 python app.py
 ```
 
-**5. Tarayıcıda aç:**
+**6. Tarayıcıda aç:**
 http://127.0.0.1:5000
 ---
 
 ##  Gereksinimler (requirements.txt)
-
 flask
 napalm
 netmiko
@@ -89,15 +97,15 @@ netmiko
 
 ##  Yol Haritası
 
-- [x] Mock veri ile çalışan dashboard
-- [x] Config backup/diff/simülasyon
-- [x] Compliance denetim modülü
-- [x] Audit log sistemi
-- [ ] Gerçek Cisco cihaz entegrasyonu (GNS3 IOS image bekleniyor)
-- [ ] Multi-vendor test (Juniper/Arista)
-
----
-
-##  Not
-
-Proje şu an **mock veri** ile çalışmaktadır. GNS3 ortamında Cisco IOS image temin edildikten sonra `mock_device.py` ve `mock_napalm.py` dosyalarındaki fonksiyonlar gerçek NAPALM/Netmiko bağlantılarıyla değiştirilecektir. Mimari bu geçişe hazır olacak şekilde tasarlanmıştır.
+- [x] Gerçek Cisco 3725 cihaz entegrasyonu (NAPALM/Netmiko via GNS3)
+- [x] Çok cihazlı envanter dashboard
+- [x] Config backup/diff/simülasyon/uygulama
+- [x] Config validasyonu (IP, interface, syntax kontrolü)
+- [x] Compliance denetim modülü (10 güvenlik kuralı)
+- [x] SQLite audit log sistemi
+- [x] Gerçek zamanlı izleme ve uyarı sistemi
+- [x] Ağ topoloji haritası (vis.js)
+- [x] Cache sistemi ile performans optimizasyonu
+- [ ] Grafik/istatistik sayfası
+- [ ] Toplu işlem (birden fazla cihaza aynı anda işlem)
+- [ ] Kullanıcı girişi (login sistemi)
