@@ -106,6 +106,6 @@ netmiko
 - [x] Gerçek zamanlı izleme ve uyarı sistemi
 - [x] Ağ topoloji haritası (vis.js)
 - [x] Cache sistemi ile performans optimizasyonu
-- [ ] Grafik/istatistik sayfası
+- [x] Grafik/istatistik sayfası
 - [ ] Toplu işlem (birden fazla cihaza aynı anda işlem)
 - [ ] Kullanıcı girişi (login sistemi)
