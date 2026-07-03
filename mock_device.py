@@ -20,12 +20,14 @@ def get_napalm_device(port):
             'port': port,
             'transport': 'telnet',
             'secret': "cisco123",
-            'global_delay_factor': 5,
-            'read_timeout_override': 120,
+            'global_delay_factor': 8,
+            'read_timeout_override': 180,
             'fast_cli': False,
-            'session_timeout': 120,
+            'session_timeout': 180,
+            'conn_timeout': 60,
         }
     )
+
 def fetch_one(d):
     try:
         dev = get_napalm_device(d["port"])
@@ -64,6 +66,18 @@ def fetch_one(d):
             "interfaces": {},
             "config": ""
         }
+
+
+def fetch_config(d):
+    try:
+        dev = get_napalm_device(d["port"])
+        dev.open()
+        config = dev.get_config()["running"]
+        dev.close()
+        return config
+    except Exception as e:
+        print(f"Config HATA ({d['port']}): {e}")
+        return ""
 
 def _refresh_cache():
     global _cache
