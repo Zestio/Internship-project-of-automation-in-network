@@ -348,6 +348,46 @@ def compliance(host):
     sonuclar, gecen, toplam = compliance_kontrol(config)
     return render_template('compliance.html', host=host, sonuclar=sonuclar, gecen=gecen, toplam=toplam)
 
+@app.route('/api/bulk_backup', methods=['POST'])
+@login_required
+def bulk_backup():
+    from flask import request as req
+    hosts = req.json.get('hosts', [])
+    devices = get_user_devices(current_user.id)
+    count = 0
+    for host in hosts:
+        device = next((d for d in devices if d["host"] == host), None)
+        if device:
+            config = device.get("config", "")
+            if not os.path.exists("backups"):
+                os.makedirs("backups")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"backups/{host}_{timestamp}.txt"
+            with open(filename, "w") as f:
+                f.write(config)
+            log_ekle(host, "BACKUP", "Toplu backup alındı", user_id=current_user.id)
+            count += 1
+    return jsonify({"message": f"{count} cihazdan backup alındı."})
+
+@app.route('/api/bulk_compliance', methods=['POST'])
+@login_required
+def bulk_compliance():
+    from flask import request as req
+    hosts = req.json.get('hosts', [])
+    devices = get_user_devices(current_user.id)
+    results = []
+    for host in hosts:
+        device = next((d for d in devices if d["host"] == host), None)
+        if device:
+            config = device.get("config", "")
+            _, gecen, toplam = compliance_kontrol(config)
+            results.append({
+                "host": host,
+                "hostname": device.get("hostname", "-"),
+                "skor": round((gecen / toplam) * 100)
+            })
+    return jsonify({"results": results})
+
 @app.route('/audit')
 @login_required
 def audit():
