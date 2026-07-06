@@ -68,8 +68,14 @@ def fetch_device(host, port, display_host):
         dev.open()
         facts = dev.get_facts()
         interfaces = dev.get_interfaces()
-        ip_data = dev.get_interfaces_ip()
-        config = dev.get_config()["running"]
+        try:
+            ip_data = dev.get_interfaces_ip()
+        except Exception:
+            ip_data = {}
+        try:
+            config = dev.get_config()["running"]
+        except Exception:
+            config = ""
         dev.close()
 
         result_interfaces = {}
@@ -204,6 +210,38 @@ def register():
         flash('Kayıt başarılı, giriş yapabilirsiniz.', 'success')
         return redirect('/login')
     return render_template('register.html')
+import subprocess
+import platform
+
+def ping_host(host):
+    param = "-n" if platform.system().lower() == "windows" else "-c"
+    try:
+        result = subprocess.run(
+            ["ping", param, "1", host],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=3
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+@app.route('/api/ping/<host>')
+@login_required
+def ping(host):
+    # display_host yerine GNS3 VM IP'sine ping at
+    import sqlite3
+    conn = sqlite3.connect("audit.db")
+    c = conn.cursor()
+    c.execute("SELECT host FROM user_devices WHERE user_id = ? AND display_host = ?", 
+              (current_user.id, host))
+    row = c.fetchone()
+    conn.close()
+    
+    ping_target = row[0] if row else host
+    result = ping_host(ping_target)
+    return jsonify({"host": host, "alive": result})
+
 
 @app.route('/add_device', methods=['GET', 'POST'])
 @login_required
@@ -218,6 +256,35 @@ def add_device():
         flash('Cihaz başarıyla eklendi.', 'success')
         return redirect('/')
     return render_template('add_device.html')
+import socket
+
+def port_scan(host, port, timeout=3):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
+
+@app.route('/api/portscan/<host>')
+@login_required
+def portscan(host):
+    import sqlite3
+    conn = sqlite3.connect("audit.db")
+    c = conn.cursor()
+    c.execute("SELECT host, port FROM user_devices WHERE user_id = ? AND display_host = ?",
+              (current_user.id, host))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"host": host, "port": None, "open": False})
+
+    gns3_host, telnet_port = row[0], row[1]
+    result = port_scan(gns3_host, telnet_port)
+    return jsonify({"host": host, "port": telnet_port, "open": result}) 
 
 @app.route('/logout')
 @login_required
@@ -412,6 +479,74 @@ def topology():
         "vendor": d.get("vendor", ""),
     } for d in devices]
     return render_template('topology.html', devices=simple_devices)
+
+@app.route('/delete_device/<display_host>', methods=['POST'])
+@login_required
+def delete_device(display_host):
+    import sqlite3
+    conn = sqlite3.connect("audit.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM user_devices WHERE user_id = ? AND display_host = ?", 
+              (current_user.id, display_host))
+    conn.commit()
+    conn.close()
+    # Cache'i güncelle
+    with user_caches_lock:
+        if current_user.id in user_caches:
+            user_caches[current_user.id] = [
+                d for d in user_caches[current_user.id] 
+                if d["host"] != display_host
+            ]
+    return redirect('/')
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_password = sifre_hash(request.form.get('current_password'))
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        user = kullanici_bul(current_user.username)
+        if user[2] != current_password:
+            flash('Mevcut şifre hatalı.', 'danger')
+            return render_template('change_password.html')
+
+        if len(new_password) < 8 or not any(c.isupper() for c in new_password) or not any(c.isdigit() for c in new_password):
+            flash('Yeni şifre en az 8 karakter, 1 büyük harf ve 1 rakam içermeli.', 'danger')
+            return render_template('change_password.html')
+
+        if new_password != confirm_password:
+            flash('Yeni şifreler eşleşmiyor.', 'danger')
+            return render_template('change_password.html')
+
+        import sqlite3
+        conn = sqlite3.connect("audit.db")
+        c = conn.cursor()
+        c.execute("UPDATE users SET password = ? WHERE id = ?", 
+                  (sifre_hash(new_password), current_user.id))
+        conn.commit()
+        conn.close()
+        flash('Şifre başarıyla güncellendi.', 'success')
+        return redirect('/')
+    return render_template('change_password.html')
+
+@app.route('/profile')
+@login_required
+def profile():
+    devices = get_user_devices(current_user.id)
+    logs = log_listele(current_user.id)
+    backup_count = sum(1 for l in logs if l[3] == "BACKUP")
+    diff_count = sum(1 for l in logs if l[3] == "CONFIG DIFF")
+    apply_count = sum(1 for l in logs if l[3] == "CONFIG APPLY")
+    return render_template('profile.html',
+        username=current_user.username,
+        devices=devices,
+        backup_count=backup_count,
+        diff_count=diff_count,
+        apply_count=apply_count,
+        total_devices=len(devices)
+    )
 
 @app.route('/stats')
 @login_required

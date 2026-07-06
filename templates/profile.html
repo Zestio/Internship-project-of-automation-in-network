@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Profil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <a href="/" class="btn btn-link mb-3">← Geri</a>
+        <h1>👤 Profil</h1>
+
+        <!-- Kullanıcı Bilgileri -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                        style="width:80px; height:80px; font-size:2rem;">
+                        {{ username[0].upper() }}
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ username }}</h3>
+                        <p class="text-muted mb-0">Ağ Yönetim Platformu Kullanıcısı</p>
+                    </div>
+                    <div class="ms-auto">
+                        <a href="/change_password" class="btn btn-outline-warning btn-sm">🔑 Şifre Değiştir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İstatistik Kartları -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <h2 class="display-5 fw-bold text-primary">{{ total_devices }}</h2>
+                        <p class="text-muted mb-0">Kayıtlı Cihaz</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <h2 class="display-5 fw-bold text-secondary">{{ backup_count }}</h2>
+                        <p class="text-muted mb-0">Alınan Backup</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <h2 class="display-5 fw-bold text-warning">{{ diff_count }}</h2>
+                        <p class="text-muted mb-0">Config Diff</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <h2 class="display-5 fw-bold text-success">{{ apply_count }}</h2>
+                        <p class="text-muted mb-0">Config Uygulama</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cihaz Listesi -->
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>📡 Kayıtlı Cihazlarım</span>
+                <a href="/add_device" class="btn btn-sm btn-outline-success">➕ Cihaz Ekle</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Host</th>
+                            <th>Hostname</th>
+                            <th>Model</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in devices %}
+                        <tr>
+                            <td>{{ d.host }}</td>
+                            <td>{{ d.hostname }}</td>
+                            <td>{{ d.model }}</td>
+                            <td>
+                                {% if d.hostname != "Ulaşılamıyor" %}
+                                    <span class="badge bg-success">Online</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Offline</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

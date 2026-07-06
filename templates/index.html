@@ -8,18 +8,20 @@
 <body class="bg-light">
     <div class="container py-5">
         <div id="alerts-container" class="mb-3"></div>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>📡 Ağ Cihazları</h1>
-            <div class="d-flex gap-2 align-items-center">
-                <a href="/audit" class="btn btn-outline-secondary">📋 Audit Log</a>
-                <a href="/topology" class="btn btn-outline-info">🗺️ Topoloji</a>
-                <a href="/stats" class="btn btn-outline-dark">📊 İstatistikler</a>
-                <a href="/add_device" class="btn btn-outline-success">➕ Cihaz Ekle</a>
-                <button class="btn btn-primary" onclick="taraButton()">🔄 Şimdi Tara</button>
-                <a href="/logout" class="btn btn-outline-danger">🚪 Çıkış ({{ username }})</a>
-                <div class="text-muted small">Son tarama: <span id="last-scan">{{ last_scan }}</span></div>
-            </div>
-        </div>
+       <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📡 Ağ Cihazları</h1>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <a href="/audit" class="btn btn-sm btn-outline-secondary">📋 Audit Log</a>
+        <a href="/topology" class="btn btn-sm btn-outline-info">🗺️ Topoloji</a>
+        <a href="/stats" class="btn btn-sm btn-outline-dark">📊 İstatistikler</a>
+        <a href="/add_device" class="btn btn-sm btn-outline-success">➕ Cihaz Ekle</a>
+        <a href="/change_password" class="btn btn-sm btn-outline-warning">🔑 Şifre Değiştir</a>
+        <button class="btn btn-sm btn-primary" onclick="taraButton()">🔄 Şimdi Tara</button>
+        <a href="/profile" class="btn btn-sm btn-outline-primary">👤 Profil</a>
+        <a href="/logout" class="btn btn-sm btn-outline-danger">🚪 Çıkış ({{ username }})</a>
+        <div class="text-muted small">Son tarama: <span id="last-scan">{{ last_scan }}</span></div>
+    </div>
+</div>
 
         <!-- Toplu İşlem Butonları -->
         <div class="d-flex gap-2 mb-3" id="bulk-actions" style="display:none!important;">
@@ -54,6 +56,12 @@
                                 <a href="/device/{{ d.host }}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                 <a href="/config/{{ d.host }}" class="btn btn-sm btn-outline-secondary">Config</a>
                                 <a href="/compliance/{{ d.host }}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
+                                <button onclick="pingHost('{{ d.host }}', this)" class="btn btn-sm btn-outline-info">🔍 Ping</button>
+                                <button onclick="portScan('{{ d.host }}', this)" class="btn btn-sm btn-outline-secondary">🔌 Port</button>
+                                <form action="/delete_device/{{ d.host }}" method="post" style="display:inline;"
+    onsubmit="return confirm('Bu cihazı silmek istediğinizden emin misiniz?')">
+    <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Sil</button>
+</form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -111,6 +119,26 @@
                 secimTemizle();
             });
         }
+        function portScan(host, btn) {
+    btn.textContent = '⏳';
+    btn.disabled = true;
+    fetch(`/api/portscan/${host}`)
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.open) {
+                btn.textContent = `✅ :${data.port} Açık`;
+                btn.className = 'btn btn-sm btn-success';
+            } else {
+                btn.textContent = `❌ :${data.port} Kapalı`;
+                btn.className = 'btn btn-sm btn-danger';
+            }
+            setTimeout(() => {
+                btn.textContent = '🔌 Port';
+                btn.className = 'btn btn-sm btn-outline-secondary';
+            }, 3000);
+        });
+}
 
         function topluCompliance() {
             const hosts = seciliHostlar();
@@ -153,12 +181,37 @@
                                     <a href="/device/${d.host}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                     <a href="/config/${d.host}" class="btn btn-sm btn-outline-secondary">Config</a>
                                     <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
+                                    <form action="/delete_device/${d.host}" method="post" style="display:inline;"
+    onsubmit="return confirm('Bu cihazı silmek istediğinizden emin misiniz?')">
+    <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Sil</button>
+</form>
                                 </td>
                             </tr>`;
                     });
                     document.getElementById('last-scan').textContent = result.last_scan;
                 });
         }
+
+        function pingHost(host, btn) {
+    btn.textContent = '⏳';
+    btn.disabled = true;
+    fetch(`/api/ping/${host}`)
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.alive) {
+                btn.textContent = '✅ Online';
+                btn.className = 'btn btn-sm btn-success';
+            } else {
+                btn.textContent = '❌ Offline';
+                btn.className = 'btn btn-sm btn-danger';
+            }
+            setTimeout(() => {
+                btn.textContent = '🔍 Ping';
+                btn.className = 'btn btn-sm btn-outline-info';
+            }, 3000);
+        });
+}
 
         function checkAlerts() {
             fetch('/api/alerts')
