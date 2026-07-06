@@ -13,7 +13,9 @@
             <div class="d-flex gap-2 align-items-center">
                 <a href="/audit" class="btn btn-outline-secondary">📋 Audit Log</a>
                 <a href="/topology" class="btn btn-outline-info">🗺️ Topoloji</a>
+                <a href="/stats" class="btn btn-outline-dark">📊 İstatistikler</a>
                 <button class="btn btn-primary" onclick="taraButton()">🔄 Şimdi Tara</button>
+                <a href="/logout" class="btn btn-outline-danger">🚪 Çıkış ({{ username }})</a>
                 <div class="text-muted small">Son tarama: <span id="last-scan">{{ last_scan }}</span></div>
             </div>
         </div>
@@ -41,7 +43,7 @@
                                 <a href="/device/{{ d.host }}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                 <a href="/config/{{ d.host }}" class="btn btn-sm btn-outline-secondary">Config</a>
                                 <a href="/compliance/{{ d.host }}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
-                                <a href="/stats" class="btn btn-outline-dark">📊 İstatistikler</a>
+                                <a href="/add_device" class="btn btn-outline-success">➕ Cihaz Ekle</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -54,28 +56,28 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function taraButton() {
-            fetch('/api/devices')
-                .then(response => response.json())
-                .then(result => {
-                    let tbody = document.querySelector('#device-table tbody');
-                    tbody.innerHTML = '';
-                    result.devices.forEach(d => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${d.host}</td>
-                                <td>${d.hostname}</td>
-                                <td><span class="badge bg-secondary">${d.model}</span></td>
-                                <td>${d.uptime}</td>
-                                <td>
-                                    <a href="/device/${d.host}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
-                                    <a href="/config/${d.host}" class="btn btn-sm btn-outline-secondary">Config</a>
-                                    <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
-                                </td>
-                            </tr>`;
-                    });
-                    document.getElementById('last-scan').textContent = result.last_scan;
-                });
-        }
+    fetch('/api/devices')
+        .then(response => response.json())
+        .then(result => {
+            let tbody = document.querySelector('#device-table tbody');
+            tbody.innerHTML = '';
+            result.devices.forEach(d => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.host}</td>
+                        <td>${d.hostname}</td>
+                        <td><span class="badge bg-secondary">${d.model}</span></td>
+                        <td>${d.uptime}</td>
+                        <td>
+                            <a href="/device/${d.host}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
+                            <a href="/config/${d.host}" class="btn btn-sm btn-outline-secondary">Config</a>
+                            <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
+                        </td>
+                    </tr>`;
+            });
+            document.getElementById('last-scan').textContent = result.last_scan;
+        });
+}
 
         function checkAlerts() {
             fetch('/api/alerts')
@@ -84,16 +86,10 @@
                     const container = document.getElementById('alerts-container');
                     container.innerHTML = '';
                     if (alerts.length === 0) {
-                        container.innerHTML = `
-                            <div class="alert alert-success py-2">
-                                ✅ Tüm cihazlar normal çalışıyor.
-                            </div>`;
+                        container.innerHTML = `<div class="alert alert-success py-2">✅ Tüm cihazlar normal çalışıyor.</div>`;
                     } else {
                         alerts.forEach(a => {
-                            container.innerHTML += `
-                                <div class="alert alert-${a.tip} py-2">
-                                    ⚠️ ${a.mesaj}
-                                </div>`;
+                            container.innerHTML += `<div class="alert alert-${a.tip} py-2">⚠️ ${a.mesaj}</div>`;
                         });
                     }
                 });
