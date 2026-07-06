@@ -242,6 +242,44 @@ def ping(host):
     result = ping_host(ping_target)
     return jsonify({"host": host, "alive": result})
 
+@app.route('/config/<host>/versions')
+@login_required
+def config_versions(host):
+    backup_dir = "backups"
+    files = []
+    if os.path.exists(backup_dir):
+        for f in sorted(os.listdir(backup_dir), reverse=True):
+            if f.startswith(host):
+                full_path = os.path.join(backup_dir, f)
+                size = os.path.getsize(full_path)
+                files.append({"name": f, "size": size})
+    return render_template('config_versions.html', host=host, files=files)
+
+@app.route('/api/version_diff/<host>', methods=['POST'])
+@login_required
+def version_diff(host):
+    data = request.json
+    v1, v2 = data.get('v1'), data.get('v2')
+
+    try:
+        with open(os.path.join("backups", v1), "r") as f:
+            config1 = f.read().splitlines()
+        with open(os.path.join("backups", v2), "r") as f:
+            config2 = f.read().splitlines()
+    except Exception as e:
+        return jsonify({"diff": f"Hata: {e}"})
+
+    diff_lines = []
+    for line in config2:
+        if line.strip() not in [l.strip() for l in config1]:
+            diff_lines.append(f"+ {line}")
+    for line in config1:
+        if line.strip() not in [l.strip() for l in config2]:
+            diff_lines.append(f"- {line}")
+
+    diff = "\n".join(diff_lines) if diff_lines else "Değişiklik yok"
+    return jsonify({"diff": diff})
+
 
 @app.route('/add_device', methods=['GET', 'POST'])
 @login_required

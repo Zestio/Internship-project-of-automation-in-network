@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ host }} - Config Versiyonları</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <a href="/config/{{ host }}" class="btn btn-link mb-3">← Geri</a>
+        <h1>📋 Config Versiyonları: {{ host }}</h1>
+
+        {% if files|length < 2 %}
+        <div class="alert alert-warning">
+            Karşılaştırma yapabilmek için en az 2 backup gerekli.
+        </div>
+        {% endif %}
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Versiyon</th>
+                            <th>Dosya Adı</th>
+                            <th>Boyut</th>
+                            <th>Karşılaştır</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in files %}
+                        <tr>
+                            <td><span class="badge bg-secondary">V{{ loop.revindex }}</span></td>
+                            <td>{{ f.name }}</td>
+                            <td>{{ f.size }} byte</td>
+                            <td>
+                                <input type="checkbox" class="version-check" value="{{ f.name }}">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button onclick="versiyonKarsilastir('{{ host }}')" class="btn btn-primary mb-4">🔍 Seçili İkisini Karşılaştır</button>
+
+        <div id="diff-result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function versiyonKarsilastir(host) {
+            const checked = Array.from(document.querySelectorAll('.version-check:checked')).map(cb => cb.value);
+            if (checked.length !== 2) {
+                alert('Lütfen tam olarak 2 versiyon seçin.');
+                return;
+            }
+            const resultDiv = document.getElementById('diff-result');
+            resultDiv.innerHTML = '<div class="alert alert-info">⏳ Karşılaştırılıyor...</div>';
+            fetch(`/api/version_diff/${host}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({v1: checked[0], v2: checked[1]})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.diff === 'Değişiklik yok') {
+                    resultDiv.innerHTML = '<div class="alert alert-success">✅ İki versiyon arasında fark yok.</div>';
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="card shadow-sm">
+                            <div class="card-header">🔍 Diff Sonucu</div>
+                            <div class="card-body">
+                                <pre class="bg-dark text-white p-3 rounded">${data.diff}</pre>
+                            </div>
+                        </div>`;
+                }
+            });
+        }
+
+        // Max 2 seçim
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('version-check')) {
+                const checked = document.querySelectorAll('.version-check:checked');
+                if (checked.length > 2) {
+                    e.target.checked = false;
+                    alert('Sadece 2 versiyon seçebilirsiniz.');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
