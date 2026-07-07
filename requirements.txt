@@ -2,3 +2,5 @@ flask
 napalm
 netmiko
 flask-login
+openpyxl
+reportlab

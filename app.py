@@ -8,6 +8,15 @@ from datetime import datetime
 from database import init_db, log_ekle, log_listele, log_temizle, kullanici_ekle, kullanici_bul, kullanici_cihaz_ekle, kullanici_cihazlari
 from mock_napalm import get_config, backup_config, compare_config, simulate_config
 from compliance import compliance_kontrol
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import io
+import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.secret_key = "napalm-staj-projesi-2026"
@@ -106,6 +115,25 @@ def fetch_device(host, port, display_host):
             "interfaces": {},
             "config": ""
         }
+    
+
+
+EMAIL_SENDER = "berayahya41@gmail.com"
+EMAIL_PASSWORD = "wgghdmpjbrpwgszw"
+EMAIL_RECEIVER = "naptinsen812@gmail.com"
+
+def email_gonder(konu, mesaj):
+    try:
+        msg = MIMEText(mesaj)
+        msg['Subject'] = konu
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = EMAIL_RECEIVER
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.send_message(msg)
+        print(f"Email gonderildi: {konu}")
+    except Exception as e:
+        print(f"Email HATA: {e}")
 
 def load_user_cache(user_id):
     devices_db = kullanici_cihazlari(user_id)
@@ -150,18 +178,37 @@ def monitor_loop():
                     all_devices.extend(devices)
             for d in all_devices:
                 if d["hostname"] == "Ulaşılamıyor":
-                    new_alerts.append({
+                    alert = {
                         "host": d["host"],
-                        "mesaj": f"{d['host']} cihazına ulaşılamıyor!",
+                        "mesaj": f"{d['host']} cihazina ulasilamiyor!",
                         "tip": "danger"
-                    })
+                    }
+                    new_alerts.append(alert)
+                    threading.Thread(
+                        target=email_gonder,
+                        args=(
+                            f"ALARM: {d['host']} cihazina ulasilamiyor",
+                            f"{d['host']} adresindeki cihaza ulasilamiyor!\nTarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                        ),
+                        daemon=True
+                    ).start()
+                    continue
                 for iface, info in d.get("interfaces", {}).items():
                     if info["status"] == "down":
-                        new_alerts.append({
+                        alert = {
                             "host": d["host"],
                             "mesaj": f"{d['hostname']} - {iface} DOWN!",
                             "tip": "warning"
-                        })
+                        }
+                        new_alerts.append(alert)
+                        threading.Thread(
+                            target=email_gonder,
+                            args=(
+                                f"ALARM: {d['hostname']} - {iface} DOWN",
+                                f"{d['hostname']} ({d['host']}) cihazinda {iface} interface DOWN durumuna gecti!\nTarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                            ),
+                            daemon=True
+                        ).start()
             with alerts_lock:
                 alerts.clear()
                 alerts.extend(new_alerts)
@@ -183,6 +230,109 @@ def login():
             return redirect('/')
         flash('Kullanıcı adı veya şifre hatalı.', 'danger')
     return render_template('login.html')
+
+@app.route('/export/devices/excel')
+@login_required
+def export_devices_excel():
+    from openpyxl.utils import get_column_letter
+    devices = get_user_devices(current_user.id)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Cihaz Listesi"
+
+    ws.merge_cells("A1:F1")
+    ws["A1"] = "Ag Cihaz Envanteri"
+    ws["A1"].font = Font(bold=True, size=14, color="FFFFFF")
+    ws["A1"].fill = PatternFill("solid", start_color="1F4E78")
+    ws["A1"].alignment = Alignment(horizontal="center")
+
+    headers = ["Host", "Hostname", "Vendor", "Model", "OS Version", "Uptime"]
+    for i, h in enumerate(headers, start=1):
+        cell = ws.cell(row=2, column=i, value=h)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", start_color="2E75B6")
+        cell.alignment = Alignment(horizontal="center")
+
+    for row, d in enumerate(devices, start=3):
+        ws.cell(row=row, column=1, value=d.get("host", "-"))
+        ws.cell(row=row, column=2, value=d.get("hostname", "-"))
+        ws.cell(row=row, column=3, value=d.get("vendor", "-"))
+        ws.cell(row=row, column=4, value=d.get("model", "-"))
+        ws.cell(row=row, column=5, value=d.get("os_version", "-"))
+        ws.cell(row=row, column=6, value=str(d.get("uptime", "-")))
+
+    for i in range(1, 7):
+        col_letter = get_column_letter(i)
+        max_len = max(
+            len(str(ws.cell(row=r, column=i).value or ""))
+            for r in range(1, ws.max_row + 1)
+        )
+        ws.column_dimensions[col_letter].width = max_len + 4
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="cihaz_listesi.xlsx"
+    )
+
+@app.route('/export/compliance/pdf')
+@login_required
+def export_compliance_pdf():
+    devices = get_user_devices(current_user.id)
+    styles = getSampleStyleSheet()
+    output = io.BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=A4)
+    elements = []
+
+    elements.append(Paragraph("Compliance Denetim Raporu", styles['Title']))
+    elements.append(Paragraph(f"Kullanıcı: {current_user.username}", styles['Normal']))
+    elements.append(Paragraph(f"Tarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+
+    for d in devices:
+        if d["hostname"] == "Ulasilamiyor":
+            continue
+
+        config = d.get("config", "")
+        sonuclar, gecen, toplam = compliance_kontrol(config)
+        skor = round((gecen / toplam) * 100)
+
+        elements.append(Paragraph(f"Cihaz: {d['hostname']} ({d['host']})", styles['Heading2']))
+        elements.append(Paragraph(f"Compliance Skoru: %{skor}", styles['Normal']))
+        elements.append(Spacer(1, 10))
+
+        table_data = [["#", "Kural", "Durum"]]
+        for s in sonuclar:
+            durum = "✓ Uyuyor" if s["durum"] else "✗ Uymuyor"
+            table_data.append([str(s["id"]), s["kural"], durum])
+
+        t = Table(table_data, colWidths=[30, 320, 100])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2E75B6')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#EBF3FB')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 20))
+
+    doc.build(elements)
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="rapor.pdf"
+    )
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
