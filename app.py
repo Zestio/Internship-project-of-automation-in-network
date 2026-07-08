@@ -45,6 +45,7 @@ def load_user(user_id):
 init_db()
 
 alerts = []
+sent_alerts = set()
 alerts_lock = threading.Lock()
 user_caches = {}
 user_caches_lock = threading.Lock()
@@ -168,8 +169,11 @@ def get_user_devices(user_id):
         return list(user_caches.get(user_id, []))
 
 def monitor_loop():
+   sent_alerts = set()
+
+def monitor_loop():
     while True:
-        time.sleep(30)
+        time.sleep(300)
         try:
             new_alerts = []
             with user_caches_lock:
@@ -178,12 +182,11 @@ def monitor_loop():
                     all_devices.extend(devices)
             for d in all_devices:
                 if d["hostname"] == "Ulaşılamıyor":
-                    alert = {
+                    new_alerts.append({
                         "host": d["host"],
-                        "mesaj": f"{d['host']} cihazina ulasilamiyor!",
+                        "mesaj": f"{d['host']} cihazına ulaşılamıyor!",
                         "tip": "danger"
-                    }
-                    new_alerts.append(alert)
+                    })
                     threading.Thread(
                         target=email_gonder,
                         args=(
@@ -195,17 +198,16 @@ def monitor_loop():
                     continue
                 for iface, info in d.get("interfaces", {}).items():
                     if info["status"] == "down":
-                        alert = {
+                        new_alerts.append({
                             "host": d["host"],
                             "mesaj": f"{d['hostname']} - {iface} DOWN!",
                             "tip": "warning"
-                        }
-                        new_alerts.append(alert)
+                        })
                         threading.Thread(
                             target=email_gonder,
                             args=(
                                 f"ALARM: {d['hostname']} - {iface} DOWN",
-                                f"{d['hostname']} ({d['host']}) cihazinda {iface} interface DOWN durumuna gecti!\nTarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                                f"{d['hostname']} ({d['host']}) cihazinda {iface} DOWN!\nTarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                             ),
                             daemon=True
                         ).start()
@@ -332,6 +334,20 @@ def export_compliance_pdf():
         mimetype="application/pdf",
         as_attachment=True,
         download_name="rapor.pdf"
+    )
+@app.route('/email_settings', methods=['GET', 'POST'])
+@login_required
+def email_settings():
+    global EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER
+    if request.method == 'POST':
+        EMAIL_SENDER = request.form.get('sender')
+        EMAIL_PASSWORD = request.form.get('password')
+        EMAIL_RECEIVER = request.form.get('receiver')
+        flash('Email ayarları güncellendi.', 'success')
+        return redirect('/email_settings')
+    return render_template('email_settings.html',
+        sender=EMAIL_SENDER,
+        receiver=EMAIL_RECEIVER
     )
 
 @app.route('/register', methods=['GET', 'POST'])
