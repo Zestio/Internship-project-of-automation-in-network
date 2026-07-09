@@ -46,6 +46,44 @@ def log_ekle(host, islem, detay="", user_id=None):
     conn.commit()
     conn.close()
 
+def init_device_history():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS device_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tarih TEXT,
+            user_id INTEGER,
+            host TEXT,
+            hostname TEXT,
+            interface TEXT,
+            status TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def history_ekle(user_id, host, hostname, interface, status):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO device_history (tarih, user_id, host, hostname, interface, status) VALUES (?, ?, ?, ?, ?, ?)",
+        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), user_id, host, hostname, interface, status)
+    )
+    conn.commit()
+    conn.close()
+
+def history_listele(user_id, host=None):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    if host:
+        c.execute("SELECT * FROM device_history WHERE user_id = ? AND host = ? ORDER BY id DESC LIMIT 100", (user_id, host))
+    else:
+        c.execute("SELECT * FROM device_history WHERE user_id = ? ORDER BY id DESC LIMIT 100", (user_id,))
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
 def log_listele(user_id=None):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()

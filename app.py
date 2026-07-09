@@ -5,7 +5,7 @@ import hashlib
 from flask import Flask, render_template, jsonify, request, redirect, send_file, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from datetime import datetime
-from database import init_db, log_ekle, log_listele, log_temizle, kullanici_ekle, kullanici_bul, kullanici_cihaz_ekle, kullanici_cihazlari
+from database import init_db, log_ekle, log_listele, log_temizle, kullanici_ekle, kullanici_bul, kullanici_cihaz_ekle, kullanici_cihazlari, history_ekle, history_listele
 from mock_napalm import get_config, backup_config, compare_config, simulate_config
 from compliance import compliance_kontrol
 from openpyxl import Workbook
@@ -43,6 +43,8 @@ def load_user(user_id):
     return None
 
 init_db()
+from database import init_device_history
+init_device_history()
 
 alerts = []
 sent_alerts = set()
@@ -64,10 +66,10 @@ def get_napalm_device(host, port):
             'port': port,
             'transport': 'telnet',
             'secret': "cisco123",
-            'global_delay_factor': 20,
-            'read_timeout_override': 600,
+            'global_delay_factor': 30,
+            'read_timeout_override': 900,
             'fast_cli': False,
-            'session_timeout': 600,
+            'session_timeout': 900,
             'conn_timeout': 120,
         }
     )
@@ -177,10 +179,12 @@ def monitor_loop():
         try:
             new_alerts = []
             with user_caches_lock:
-                all_devices = []
-                for devices in user_caches.values():
-                    all_devices.extend(devices)
-            for d in all_devices:
+                all_devices_with_uid = []
+                for uid, devices in user_caches.items():
+                    for dev in devices:
+                        all_devices_with_uid.append((uid, dev))
+
+            for uid, d in all_devices_with_uid:
                 if d["hostname"] == "Ulaşılamıyor":
                     new_alerts.append({
                         "host": d["host"],
@@ -196,6 +200,7 @@ def monitor_loop():
                         daemon=True
                     ).start()
                     continue
+
                 for iface, info in d.get("interfaces", {}).items():
                     if info["status"] == "down":
                         new_alerts.append({
@@ -203,6 +208,7 @@ def monitor_loop():
                             "mesaj": f"{d['hostname']} - {iface} DOWN!",
                             "tip": "warning"
                         })
+                        history_ekle(uid, d["host"], d["hostname"], iface, "down")
                         threading.Thread(
                             target=email_gonder,
                             args=(
@@ -211,9 +217,11 @@ def monitor_loop():
                             ),
                             daemon=True
                         ).start()
+
             with alerts_lock:
                 alerts.clear()
                 alerts.extend(new_alerts)
+
         except Exception as e:
             print(f"Monitor HATA: {e}")
 
@@ -232,6 +240,15 @@ def login():
             return redirect('/')
         flash('Kullanıcı adı veya şifre hatalı.', 'danger')
     return render_template('login.html')
+
+@app.route('/history/<host>')
+@login_required
+def device_history(host):
+    history = history_listele(current_user.id, host)
+    devices = get_user_devices(current_user.id)
+    device = next((d for d in devices if d["host"] == host), None)
+    hostname = device["hostname"] if device else host
+    return render_template('device_history.html', host=host, hostname=hostname, history=history)
 
 @app.route('/export/devices/excel')
 @login_required
@@ -658,6 +675,34 @@ def bulk_compliance():
                 "skor": round((gecen / toplam) * 100)
             })
     return jsonify({"results": results})
+
+@app.route('/delete_account', methods=['GET', 'POST'])
+@login_required
+def delete_account():
+    if request.method == 'POST':
+        password = sifre_hash(request.form.get('password'))
+        user = kullanici_bul(current_user.username)
+        if user[2] != password:
+            flash('Şifre hatalı.', 'danger')
+            return render_template('delete_account.html')
+        
+        import sqlite3
+        conn = sqlite3.connect("audit.db")
+        c = conn.cursor()
+        c.execute("DELETE FROM user_devices WHERE user_id = ?", (current_user.id,))
+        c.execute("DELETE FROM audit_log WHERE user_id = ?", (current_user.id,))
+        c.execute("DELETE FROM users WHERE id = ?", (current_user.id,))
+        conn.commit()
+        conn.close()
+
+        # Cache temizle
+        with user_caches_lock:
+            user_caches.pop(current_user.id, None)
+
+        logout_user()
+        flash('Hesabınız silindi.', 'success')
+        return redirect('/login')
+    return render_template('delete_account.html')
 
 @app.route('/audit')
 @login_required

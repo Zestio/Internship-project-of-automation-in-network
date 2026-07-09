@@ -65,6 +65,7 @@
                             <td>
                                 <a href="/device/{{ d.host }}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                 <a href="/config/{{ d.host }}" class="btn btn-sm btn-outline-secondary">Config</a>
+                                <a href="/history/{{ d.host }}" class="btn btn-sm btn-outline-info">📈 Geçmiş</a>
                                 <a href="/compliance/{{ d.host }}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
                                 <button onclick="pingHost('{{ d.host }}', this)" class="btn btn-sm btn-outline-info">🔍 Ping</button>
                                 <button onclick="portScan('{{ d.host }}', this)" class="btn btn-sm btn-outline-secondary">🔌 Port</button>
@@ -190,6 +191,7 @@
                                 <td>
                                     <a href="/device/${d.host}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                     <a href="/config/${d.host}" class="btn btn-sm btn-outline-secondary">Config</a>
+                                    <a href="/history/${d.host}" class="btn btn-sm btn-outline-info">📈 Geçmiş</a>
                                     <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
                                     <form action="/delete_device/${d.host}" method="post" style="display:inline;"
     onsubmit="return confirm('Bu cihazı silmek istediğinizden emin misiniz?')">
