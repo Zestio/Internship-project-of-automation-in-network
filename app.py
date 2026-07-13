@@ -283,6 +283,8 @@ def login():
         if user and user[2] == password:
             u = User(user[0], user[1], user[3])
             login_user(u)
+            from flask import session
+            session['son_giris'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             threading.Thread(target=load_user_cache, args=(u.id,), daemon=True).start()
             return redirect('/')
         flash('Kullanıcı adı veya şifre hatalı.', 'danger')
@@ -613,18 +615,22 @@ def device_history(host):
 @app.route('/profile')
 @login_required
 def profile():
+    from flask import session
     devices = get_user_devices(current_user.id)
     logs = log_listele(current_user.id)
     backup_count = sum(1 for l in logs if l[3] == "BACKUP")
     diff_count = sum(1 for l in logs if l[3] == "CONFIG DIFF")
     apply_count = sum(1 for l in logs if l[3] == "CONFIG APPLY")
+    son_giris = session.get('son_giris', '-')
     return render_template('profile.html',
         username=current_user.username,
         devices=devices,
         backup_count=backup_count,
         diff_count=diff_count,
         apply_count=apply_count,
-        total_devices=len(devices)
+        total_devices=len(devices),
+        son_giris=son_giris,
+        rol=current_user.role
     )
 
 @app.route('/change_password', methods=['GET', 'POST'])
