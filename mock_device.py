@@ -10,21 +10,23 @@ _cache = []
 _cache_lock = threading.Lock()
 _cache_ready = threading.Event()
 
-def get_napalm_device(port):
+def get_napalm_device(host, port):
+    from napalm import get_network_driver
     driver = get_network_driver('ios')
     return driver(
-        hostname="192.168.56.101",
+        hostname=host,
         username="admin",
         password="cisco123",
         optional_args={
             'port': port,
             'transport': 'telnet',
             'secret': "cisco123",
-            'global_delay_factor': 8,
-            'read_timeout_override': 180,
+            'global_delay_factor': 25,
+            'read_timeout_override': 600,
             'fast_cli': False,
-            'session_timeout': 180,
-            'conn_timeout': 60,
+            'session_timeout': 600,
+            'conn_timeout': 120,
+            'global_cmd_verify': False,
         }
     )
 
