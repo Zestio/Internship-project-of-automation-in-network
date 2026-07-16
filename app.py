@@ -122,10 +122,6 @@ def sifre_hash(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def get_napalm_device(host, port):
-    """
-    NAPALM ile Cisco IOS cihazına Telnet bağlantısı kurar.
-    GNS3 üzerinden Telnet ile bağlandığı için yüksek timeout değerleri gereklidir.
-    """
     from napalm import get_network_driver
     driver = get_network_driver('ios')
     return driver(
@@ -136,70 +132,100 @@ def get_napalm_device(host, port):
             'port': port,
             'transport': 'telnet',
             'secret': "cisco123",
-            'global_delay_factor': 30,       # GNS3 gecikmesi için yüksek değer
-            'read_timeout_override': 900,    # 15 dakika timeout
+            'global_delay_factor': 2,
+            'read_timeout_override': 300,
             'fast_cli': False,
-            'session_timeout': 900,
-            'conn_timeout': 120,
+            'session_timeout': 300,
+            'conn_timeout': 60,
+            'global_cmd_verify': False,
+            'auto_connect': False,
         }
     )
 
 def fetch_device(host, port, display_host):
     try:
-        # Önce raw socket ile buffer'ı temizle
-        import socket as raw_socket
+        from netmiko import ConnectHandler
         import time
-        s = raw_socket.socket(raw_socket.AF_INET, raw_socket.SOCK_STREAM)
-        s.settimeout(10)
-        s.connect((host, port))
-        time.sleep(3)
-        s.settimeout(2)
-        try:
-            while True:
-                data = s.recv(4096)
-                if not data:
-                    break
-        except:
-            pass
-        s.send(b"\r\n")
-        time.sleep(1)
-        try:
-            s.recv(4096)
-        except:
-            pass
-        s.close()
-        time.sleep(2)  # Bağlantının kapanması için bekle
 
-        # Şimdi NAPALM ile bağlan
-        dev = get_napalm_device(host, port)
-        dev.open()
-        facts = dev.get_facts()
-        interfaces = dev.get_interfaces()
+        conn = ConnectHandler(
+    device_type='cisco_ios_telnet',
+    host=host,
+    port=port,
+    username='admin',
+    password='cisco123',
+    secret='Cisco123!',
+    global_delay_factor=5,
+    read_timeout_override=300,
+    fast_cli=False,
+    session_timeout=300,
+    conn_timeout=60,
+    global_cmd_verify=False,  # Otomatik bağlanma
+)
+        conn.send_command_timing('enable', strip_prompt=False, strip_command=False)
+        time.sleep(1)
+        conn.send_command_timing('Cisco123!', strip_prompt=False, strip_command=False)
+        time.sleep(1)
+        # Manuel bağlan — buffer temizle
+        conn.establish_connection()
+        import time
+        time.sleep(3)
+        conn.send_command_timing('\r\n', strip_prompt=False, strip_command=False)
+        time.sleep(2)
+        conn.find_prompt()
+        conn.enable()
+               
         try:
-            ip_data = dev.get_interfaces_ip()
+            conn.enable()
         except Exception:
-            ip_data = {}
+            pass
+
+        # Temel bilgileri çek
+        version_output = conn.send_command('show version', read_timeout=60)
+        iface_output = conn.send_command('show ip interface brief', read_timeout=60)
+
         try:
-            config = dev.get_config()["running"]
+            config = conn.send_command('show running-config', read_timeout=120)
         except Exception:
             config = ""
-        dev.close()
 
+        conn.disconnect()
+
+        # Hostname parse et
+        hostname = display_host
+        uptime = "-"
+        for line in version_output.splitlines():
+            if "uptime is" in line:
+                hostname = line.split()[0].strip()
+                uptime = line.split("uptime is")[-1].strip()
+                break
+
+        # Model parse et
+        model = "3725"
+        for line in version_output.splitlines():
+            if "Cisco" in line and "processor" in line:
+                model = line.split("(")[0].replace("Cisco", "").strip()
+                break
+
+        # Interface parse et
         result_interfaces = {}
-        for name, info in interfaces.items():
-            ip = None
-            if name in ip_data:
-                ips = list(ip_data[name].get("ipv4", {}).keys())
-                ip = ips[0] if ips else None
-            result_interfaces[name] = {
-                "status": "up" if info["is_up"] else "down",
-                "ip": ip
-            }
+        for line in iface_output.splitlines():
+            parts = line.split()
+            if len(parts) >= 6 and any(x in parts[0] for x in ["FastEthernet", "GigabitEthernet", "Loopback", "Serial"]):
+                name = parts[0]
+                ip = parts[1] if parts[1] != "unassigned" else None
+                status = "up" if parts[4] == "up" else "down"
+                result_interfaces[name] = {"status": status, "ip": ip}
 
-        facts["host"] = display_host
-        facts["interfaces"] = result_interfaces
-        facts["config"] = config
-        return facts
+        return {
+            "host": display_host,
+            "hostname": hostname,
+            "model": model,
+            "uptime": uptime,
+            "vendor": "Cisco",
+            "os_version": "12.4(15)T14",
+            "interfaces": result_interfaces,
+            "config": config
+        }
 
     except Exception as e:
         print(f"HATA ({port}): {e}")
