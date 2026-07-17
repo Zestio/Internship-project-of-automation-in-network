@@ -288,7 +288,7 @@ def load_user_cache(user_id):
         }
 
     # Tüm cihazlara paralel bağlan
-    with ThreadPoolExecutor(max_workers=1) as executor:
+    with ThreadPoolExecutor(max_workers=len(devices_db)) as executor:
         futures = {executor.submit(fetch_with_index, i, d): i for i, d in enumerate(devices_db)}
         for future in as_completed(futures):
             idx, data = future.result()
