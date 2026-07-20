@@ -1,10 +1,10 @@
-# 🌐 NAPALM Tabanlı Multi-Vendor Ağ Yönetim Platformu
+#  NAPALM Tabanlı Multi-Vendor Ağ Yönetim Platformu
 
 Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cisco ağ cihazını merkezi bir web arayüzü üzerinden yönetmeyi, konfigürasyon değişikliklerini güvenli şekilde önizlemeyi, güvenlik denetimi yapmayı ve gerçek zamanlı izleme sağlamayı hedeflemektedir.
 
 ---
 
-## 🚀 Özellikler
+##  Özellikler
 
 - **Kullanıcı Yönetimi** — Kayıt/giriş sistemi, rol tabanlı yetkilendirme (Admin/Readonly), şifre değiştirme, hesap silme
 - **Çok Cihaz Desteği** — Her kullanıcı kendi router'larını ekleyip yönetebilir, paralel bağlantı ile hızlı veri çekimi
@@ -30,7 +30,7 @@ Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cis
 
 ---
 
-## 🛠️ Kullanılan Teknolojiler
+##  Kullanılan Teknolojiler
 
 | Teknoloji | Amaç |
 |---|---|
@@ -49,7 +49,7 @@ Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cis
 
 ---
 
-## 📁 Proje Yapısı
+##  Proje Yapısı
 
 staj-projesi/
 ├── app.py                  # Flask backend, tüm route'lar
@@ -81,7 +81,7 @@ staj-projesi/
 
 ---
 
-## ⚙️ Kurulum
+##  Kurulum
 
 **1. Repoyu klonla:**
 ```bash
@@ -115,7 +115,7 @@ python app.py
 http://127.0.0.1:5000
 ---
 
-## 📋 Gereksinimler
+##  Gereksinimler
 flask
 napalm
 netmiko
@@ -125,7 +125,7 @@ reportlab
 pysnmp
 ---
 
-## 🗺️ Yol Haritası
+##  Yol Haritası
 
 - [x] Gerçek Cisco 3725 cihaz entegrasyonu (NAPALM/Netmiko via GNS3)
 - [x] Çok kullanıcılı sistem (kayıt, giriş, rol tabanlı yetkilendirme)
