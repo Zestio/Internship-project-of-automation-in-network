@@ -8,7 +8,7 @@
 <body class="bg-light">
     <div class="container py-5">
         <a href="/config/{{ host }}" class="btn btn-link mb-3">← Geri</a>
-        <h1>📋 Config Versiyonları: {{ host }}</h1>
+        <h1> Config Versiyonları: {{ host }}</h1>
 
         {% if files|length < 2 %}
         <div class="alert alert-warning">
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <button onclick="versiyonKarsilastir('{{ host }}')" class="btn btn-primary mb-4">🔍 Seçili İkisini Karşılaştır</button>
+        <button onclick="versiyonKarsilastir('{{ host }}')" class="btn btn-primary mb-4"> Seçili İkisini Karşılaştır</button>
 
         <div id="diff-result"></div>
     </div>
@@ -57,7 +57,7 @@
                 return;
             }
             const resultDiv = document.getElementById('diff-result');
-            resultDiv.innerHTML = '<div class="alert alert-info">⏳ Karşılaştırılıyor...</div>';
+            resultDiv.innerHTML = '<div class="alert alert-info"> Karşılaştırılıyor...</div>';
             fetch(`/api/version_diff/${host}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -66,11 +66,11 @@
             .then(r => r.json())
             .then(data => {
                 if (data.diff === 'Değişiklik yok') {
-                    resultDiv.innerHTML = '<div class="alert alert-success">✅ İki versiyon arasında fark yok.</div>';
+                    resultDiv.innerHTML = '<div class="alert alert-success"> İki versiyon arasında fark yok.</div>';
                 } else {
                     resultDiv.innerHTML = `
                         <div class="card shadow-sm">
-                            <div class="card-header">🔍 Diff Sonucu</div>
+                            <div class="card-header"> Diff Sonucu</div>
                             <div class="card-body">
                                 <pre class="bg-dark text-white p-3 rounded">${data.diff}</pre>
                             </div>

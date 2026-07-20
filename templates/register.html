@@ -11,7 +11,7 @@
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-body p-4">
-                        <h2 class="text-center mb-4">📡 Kayıt Ol</h2>
+                        <h2 class="text-center mb-4"> Kayıt Ol</h2>
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% for category, message in messages %}
                                 <div class="alert alert-{{ category }}">{{ message }}</div>
@@ -93,7 +93,7 @@
             else bar.classList.add('bg-success');
             feedback.innerHTML = messages.length > 0
                 ? '<span class="text-danger">Eksik: ' + messages.join(', ') + '</span>'
-                : '<span class="text-success">✅ Güçlü şifre</span>';
+                : '<span class="text-success"> Güçlü şifre</span>';
             usernameFeedback.innerHTML = (username.length > 0 && username.length < 3)
                 ? '<span class="text-danger">En az 3 karakter gerekli</span>' : '';
             submitBtn.disabled = !(score >= 3 && username.length >= 3);

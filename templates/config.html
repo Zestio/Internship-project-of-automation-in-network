@@ -17,7 +17,7 @@
 
         {% if request.args.get('backup') == 'success' %}
         <div class="alert alert-success alert-dismissible fade show">
-            ✅ Backup başarıyla alındı.
+             Backup başarıyla alındı.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endif %}
@@ -33,10 +33,10 @@
         <!-- Backup Butonları -->
         <div class="d-flex gap-2 mb-4">
             <form action="/config/{{ host }}/backup" method="post">
-                <button type="submit" class="btn btn-outline-secondary">📦 Backup Al</button>
+                <button type="submit" class="btn btn-outline-secondary"> Backup Al</button>
             </form>
-            <a href="/config/{{ host }}/backups" class="btn btn-outline-dark">📂 Backup Geçmişini Gör</a>
-            <a href="/config/{{ host }}/versions" class="btn btn-outline-info">📋 Versiyonlar</a>
+            <a href="/config/{{ host }}/backups" class="btn btn-outline-dark"> Backup Geçmişini Gör</a>
+            <a href="/config/{{ host }}/versions" class="btn btn-outline-info"> Versiyonlar</a>
         </div>
 
         <!-- Yeni Config + Butonlar -->
@@ -45,10 +45,10 @@
             <div class="card-body">
                 <textarea name="new_config" id="new_config" class="form-control mb-3" rows="8">{{ new_config or current_config }}</textarea>
                 <div class="d-flex gap-2">
-                    <button onclick="submitForm('/config/{{ host }}/preview')" class="btn btn-primary">🔍 Önizle (Diff)</button>
-                    <button onclick="submitForm('/config/{{ host }}/simulate')" class="btn btn-warning">⚙️ Simüle Et</button>
+                    <button onclick="submitForm('/config/{{ host }}/preview')" class="btn btn-primary"> Önizle (Diff)</button>
+                    <button onclick="submitForm('/config/{{ host }}/simulate')" class="btn btn-warning"> Simüle Et</button>
                     {% if diff and diff != "Değişiklik yok" %}
-                    <button onclick="submitForm('/config/{{ host }}/apply')" class="btn btn-success">✅ Onayla ve Uygula</button>
+                    <button onclick="submitForm('/config/{{ host }}/apply')" class="btn btn-success"> Onayla ve Uygula</button>
                     {% endif %}
                 </div>
             </div>
@@ -67,12 +67,12 @@
         <!-- Simülasyon Sonucu -->
         {% if sim_interfaces is defined %}
         <div class="card shadow-sm mb-4">
-            <div class="card-header">⚙️ Simülasyon Sonucu</div>
+            <div class="card-header"> Simülasyon Sonucu</div>
             <div class="card-body">
 
                 {% if sim_errors %}
                 <div class="alert alert-danger">
-                    <strong>⚠️ Hata(lar) tespit edildi:</strong>
+                    <strong> Hata(lar) tespit edildi:</strong>
                     <ul class="mb-0 mt-2">
                         {% for err in sim_errors %}
                         <li>{{ err | safe }}</li>

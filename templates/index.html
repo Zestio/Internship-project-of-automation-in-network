@@ -9,34 +9,34 @@
     <div class="container py-5">
         <div id="alerts-container" class="mb-3"></div>
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>📡 Ağ Cihazları</h1>
+            <h1> Ağ Cihazları</h1>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <a href="/audit" class="btn btn-sm btn-outline-secondary">📋 Audit Log</a>
-                <a href="/topology" class="btn btn-sm btn-outline-info">🗺️ Topoloji</a>
-                <a href="/stats" class="btn btn-sm btn-outline-dark">📊 İstatistikler</a>
-                <a href="/add_device" class="btn btn-sm btn-outline-success">➕ Cihaz Ekle</a>
-                <a href="/change_password" class="btn btn-sm btn-outline-warning">🔑 Şifre Değiştir</a>
-                <a href="/profile" class="btn btn-sm btn-outline-primary">👤 Profil</a>
-                <a href="/email_settings" class="btn btn-sm btn-outline-warning">📧 Email</a>
+                <a href="/audit" class="btn btn-sm btn-outline-secondary"> Audit Log</a>
+                <a href="/topology" class="btn btn-sm btn-outline-info"> Topoloji</a>
+                <a href="/stats" class="btn btn-sm btn-outline-dark"> İstatistikler</a>
+                <a href="/add_device" class="btn btn-sm btn-outline-success"> Cihaz Ekle</a>
+                <a href="/change_password" class="btn btn-sm btn-outline-warning"> Şifre Değiştir</a>
+                <a href="/profile" class="btn btn-sm btn-outline-primary"> Profil</a>
+                <a href="/email_settings" class="btn btn-sm btn-outline-warning"> Email</a>
                 {% if current_user.is_admin %}
-                <a href="/admin/users" class="btn btn-sm btn-outline-danger">👥 Kullanıcılar</a>
+                <a href="/admin/users" class="btn btn-sm btn-outline-danger"> Kullanıcılar</a>
                 {% endif %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown">📥 Export</button>
+                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown"> Export</button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/export/devices/excel">📊 Cihaz Listesi (Excel)</a></li>
-                        <li><a class="dropdown-item" href="/export/compliance/pdf">📄 Compliance Raporu (PDF)</a></li>
+                        <li><a class="dropdown-item" href="/export/devices/excel"> Cihaz Listesi (Excel)</a></li>
+                        <li><a class="dropdown-item" href="/export/compliance/pdf"> Compliance Raporu (PDF)</a></li>
                     </ul>
                 </div>
-                <button class="btn btn-sm btn-primary" onclick="taraButton()">🔄 Şimdi Tara</button>
-                <a href="/logout" class="btn btn-sm btn-outline-danger">🚪 Çıkış ({{ username }})</a>
+                <button class="btn btn-sm btn-primary" onclick="taraButton()"> Şimdi Tara</button>
+                <a href="/logout" class="btn btn-sm btn-outline-danger"> Çıkış ({{ username }})</a>
                 <div class="text-muted small">Son tarama: <span id="last-scan">{{ last_scan }}</span></div>
             </div>
         </div>
 
         <div class="d-flex gap-2 mb-3" id="bulk-actions" style="display:none!important;">
-            <button class="btn btn-outline-secondary" onclick="topluBackup()">📦 Seçililere Backup Al</button>
-            <button class="btn btn-outline-success" onclick="topluCompliance()">🛡️ Seçililere Compliance</button>
+            <button class="btn btn-outline-secondary" onclick="topluBackup()"> Seçililere Backup Al</button>
+            <button class="btn btn-outline-success" onclick="topluCompliance()"> Seçililere Compliance</button>
             <button class="btn btn-outline-danger" onclick="secimTemizle()">✖ Seçimi Temizle</button>
         </div>
         <div id="bulk-result" class="mb-3"></div>
@@ -65,12 +65,12 @@
                             <td>
                                 <a href="/device/{{ d.host }}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                 <a href="/config/{{ d.host }}" class="btn btn-sm btn-outline-secondary">Config</a>
-                                <a href="/history/{{ d.host }}" class="btn btn-sm btn-outline-info">📈 Geçmiş</a>
-                                <a href="/compliance/{{ d.host }}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
-                                <button onclick="pingHost('{{ d.host }}', this)" class="btn btn-sm btn-outline-info">🔍 Ping</button>
-                                <button onclick="portScan('{{ d.host }}', this)" class="btn btn-sm btn-outline-secondary">🔌 Port</button>
+                                <a href="/history/{{ d.host }}" class="btn btn-sm btn-outline-info"> Geçmiş</a>
+                                <a href="/compliance/{{ d.host }}" class="btn btn-sm btn-outline-success"> Compliance</a>
+                                <button onclick="pingHost('{{ d.host }}', this)" class="btn btn-sm btn-outline-info"> Ping</button>
+                                <button onclick="portScan('{{ d.host }}', this)" class="btn btn-sm btn-outline-secondary"> Port</button>
                                 <form action="/delete_device/{{ d.host }}" method="post" style="display:inline;" onsubmit="return confirm('Bu cihazı silmek istediğinizden emin misiniz?')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Sil</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"> Sil</button>
                                 </form>
                             </td>
                         </tr>
@@ -113,13 +113,13 @@
             const hosts = seciliHostlar();
             if (hosts.length === 0) return;
             const resultDiv = document.getElementById('bulk-result');
-            resultDiv.innerHTML = '<div class="alert alert-info">⏳ Backup alınıyor...</div>';
+            resultDiv.innerHTML = '<div class="alert alert-info"> Backup alınıyor...</div>';
             fetch('/api/bulk_backup', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({hosts: hosts})
             }).then(r => r.json()).then(data => {
-                resultDiv.innerHTML = `<div class="alert alert-success">✅ ${data.message}</div>`;
+                resultDiv.innerHTML = `<div class="alert alert-success"> ${data.message}</div>`;
                 secimTemizle();
             });
         }
@@ -128,13 +128,13 @@
             const hosts = seciliHostlar();
             if (hosts.length === 0) return;
             const resultDiv = document.getElementById('bulk-result');
-            resultDiv.innerHTML = '<div class="alert alert-info">⏳ Compliance kontrol ediliyor...</div>';
+            resultDiv.innerHTML = '<div class="alert alert-info"> Compliance kontrol ediliyor...</div>';
             fetch('/api/bulk_compliance', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({hosts: hosts})
             }).then(r => r.json()).then(data => {
-                let html = '<div class="card shadow-sm"><div class="card-header">🛡️ Toplu Compliance Sonuçları</div><div class="card-body p-0"><table class="table mb-0"><thead class="table-light"><tr><th>Host</th><th>Hostname</th><th>Skor</th></tr></thead><tbody>';
+                let html = '<div class="card shadow-sm"><div class="card-header"> Toplu Compliance Sonuçları</div><div class="card-body p-0"><table class="table mb-0"><thead class="table-light"><tr><th>Host</th><th>Hostname</th><th>Skor</th></tr></thead><tbody>';
                 data.results.forEach(r => {
                     const renk = r.skor >= 80 ? 'success' : r.skor >= 50 ? 'warning' : 'danger';
                     html += `<tr><td>${r.host}</td><td>${r.hostname}</td><td><span class="badge bg-${renk}">%${r.skor}</span></td></tr>`;
@@ -162,10 +162,10 @@
                                 <td>
                                     <a href="/device/${d.host}" class="btn btn-sm btn-outline-primary">Görüntüle</a>
                                     <a href="/config/${d.host}" class="btn btn-sm btn-outline-secondary">Config</a>
-                                    <a href="/history/${d.host}" class="btn btn-sm btn-outline-info">📈 Geçmiş</a>
-                                    <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success">🛡️ Compliance</a>
-                                    <button onclick="pingHost('${d.host}', this)" class="btn btn-sm btn-outline-info">🔍 Ping</button>
-                                    <button onclick="portScan('${d.host}', this)" class="btn btn-sm btn-outline-secondary">🔌 Port</button>
+                                    <a href="/history/${d.host}" class="btn btn-sm btn-outline-info"> Geçmiş</a>
+                                    <a href="/compliance/${d.host}" class="btn btn-sm btn-outline-success"> Compliance</a>
+                                    <button onclick="pingHost('${d.host}', this)" class="btn btn-sm btn-outline-info"> Ping</button>
+                                    <button onclick="portScan('${d.host}', this)" class="btn btn-sm btn-outline-secondary"> Port</button>
                                     <form action="/delete_device/${d.host}" method="post" style="display:inline;" onsubmit="return confirm('Bu cihazı silmek istediğinizden emin misiniz?')">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Sil</button>
                                     </form>
@@ -203,7 +203,7 @@
                 const container = document.getElementById('alerts-container');
                 container.innerHTML = '';
                 if (alerts.length === 0) {
-                    container.innerHTML = `<div class="alert alert-success py-2">✅ Tüm cihazlar normal çalışıyor.</div>`;
+                    container.innerHTML = `<div class="alert alert-success py-2"> Tüm cihazlar normal çalışıyor.</div>`;
                 } else {
                     alerts.forEach(a => {
                         container.innerHTML += `<div class="alert alert-${a.tip} py-2">⚠️ ${a.mesaj}</div>`;
