@@ -1,87 +1,107 @@
-#  NAPALM Tabanlı Multi-Vendor Ağ Yönetim Platformu
+# NAPALM Tabanlı Multi-Vendor Ağ Yönetim Platformu
 
-Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cisco ağ cihazını merkezi bir web arayüzü üzerinden yönetmeyi, konfigürasyon değişikliklerini güvenli şekilde önizlemeyi, güvenlik denetimi yapmayı ve gerçek zamanlı izleme sağlamayı hedeflemektedir.
+Dönem sonu staj projesi kapsamında geliştirilen bu platform, birden fazla Cisco ağ cihazını (router ve switch) merkezi bir web arayüzü üzerinden yönetmeyi, konfigürasyon değişikliklerini güvenli şekilde önizlemeyi, güvenlik denetimi yapmayı ve gerçek zamanlı izleme sağlamayı hedeflemektedir.
 
----
-
-##  Özellikler
-
-- **Kullanıcı Yönetimi** — Kayıt/giriş sistemi, rol tabanlı yetkilendirme (Admin/Readonly), şifre değiştirme, hesap silme
-- **Çok Cihaz Desteği** — Her kullanıcı kendi router'larını ekleyip yönetebilir, paralel bağlantı ile hızlı veri çekimi
-- **Cihaz Envanteri** — Tüm ağ cihazlarının (hostname, model, uptime, interface durumu) tek panelden görüntülenmesi
-- **Anlık Tarama** — "Şimdi Tara" butonu ile cihaz verilerinin canlı olarak güncellenmesi
-- **Gerçek Zamanlı İzleme** — Arka planda otomatik cihaz kontrolü, interface down veya cihaza ulaşılamaz durumunda anında uyarı ve e-posta bildirimi
-- **E-posta Bildirimi** — Interface down veya cihaza ulaşılamaz durumunda Gmail üzerinden otomatik alarm e-postası (5 dakikada bir)
-- **Ağ Topoloji Haritası** — Cihazların birbirine bağlantısını görsel olarak gösteren interaktif harita (vis.js)
-- **Config Yönetimi** — Mevcut konfigürasyonu görüntüleme, değişiklik önizleme (diff), simülasyon ve uygulama
-- **Config Simülasyonu** — Yeni config uygulanmadan önce interface durumlarını simüle etme, hatalı komutları tespit etme (IP, interface, syntax validasyonu)
-- **Config Versiyonlama** — Backup'lar arası diff karşılaştırması
-- **Backup Sistemi** — Tarih damgalı otomatik yedekleme, yedek listeleme, indirme ve silme
-- **Toplu İşlem** — Birden fazla cihazı seçip aynı anda backup alma veya compliance denetimi yapma
-- **Compliance Denetimi** — Cihazların güvenlik standartlarına (SSH, NTP, logging, HTTP kapalı vb.) uygunluğunu otomatik kontrol etme (10 kural)
-- **Audit Log** — Tüm işlemlerin (backup, config değişikliği) tarih/saat/host/kullanıcı bilgisiyle kayıt altına alınması
-- **Cihaz Durum Geçmişi** — Interface down olaylarının tarihli kaydı
-- **İstatistik/Grafik Sayfası** — Compliance skorları, backup sayıları, audit log dağılımı (Chart.js)
-- **Export Özelliği** — Cihaz listesini Excel, compliance raporunu PDF olarak indirme
-- **Ping & Port Tarama** — Cihaza ping atma ve Telnet portunun açık olup olmadığını kontrol etme
-- **Profil Sayfası** — Kullanıcı bilgileri, rol, son giriş zamanı, istatistikler
-- **Cache Sistemi** — Arka planda periyodik veri güncelleme, sayfa açılışlarında anlık yanıt
-- **Multi-Vendor Mimari** — NAPALM kütüphanesi sayesinde Cisco IOS/IOS-XR/NX-OS, Juniper ve Arista cihazlarına aynı kod tabanından bağlanabilme
+Proje, GNS3 simülasyon ortamında Cisco 3725 router ve NM-16ESW switch modülü üzerinde geliştirilmiş ve test edilmiştir.
 
 ---
 
-##  Kullanılan Teknolojiler
+## Özellikler
 
-| Teknoloji | Amaç |
-|---|---|
-| Python 3 | Ana programlama dili |
-| Flask | Web framework (backend) |
-| NAPALM | Multi-vendor ağ otomasyon kütüphanesi |
-| Netmiko | SSH/Telnet tabanlı cihaz bağlantısı |
-| SQLite | Kullanıcı, cihaz ve audit log veritabanı |
-| Flask-Login | Kullanıcı oturum yönetimi |
-| Bootstrap 5 | Frontend UI framework |
-| Chart.js | İstatistik grafikleri |
-| vis.js | Ağ topoloji görselleştirme |
-| openpyxl | Excel export |
-| ReportLab | PDF export |
-| GNS3 | Ağ simülasyon ortamı (Cisco 3725) |
+**Kullanıcı ve Erişim Yönetimi**
+- Kayıt ve giriş sistemi, SHA-256 ile şifrelenmiş parola saklama
+- Rol tabanlı yetkilendirme: Admin (tam yetki) ve Readonly (sadece görüntüleme)
+- Şifre değiştirme, hesap silme, son giriş zamanı takibi
+- Admin paneli üzerinden kullanıcı rol yönetimi
+
+**Cihaz Yönetimi**
+- Her kullanıcı kendi router/switch cihazlarını sisteme ekleyip yönetebilir
+- Paralel bağlantı ile hızlı çok cihaz veri çekimi (ThreadPoolExecutor)
+- Cihaz silme, ping atma, Telnet port tarama
+- Ağ topoloji haritası (vis.js ile interaktif görselleştirme)
+
+**Konfigürasyon Yönetimi**
+- Mevcut running config görüntüleme
+- Yeni config ile diff karşılaştırması (önizleme)
+- Config simülasyonu: IP, interface, syntax validasyonu ile hata tespiti
+- Config uygulama ve versiyonlama (backup'lar arası diff)
+- Tarih damgalı backup alma, listeleme, indirme ve silme
+- Toplu işlem: Birden fazla cihaza aynı anda backup alma
+
+**Güvenlik ve Denetim**
+- 10 kurallı compliance denetimi (SSH, HTTP, CEF, domain, VTY vb.)
+- Toplu compliance denetimi ve yüzde skor hesaplama
+- Tüm işlemlerin kullanıcıya özel audit log'a kaydedilmesi
+- Audit log temizleme
+
+**İzleme ve Bildirim**
+- Arka planda 5 dakikada bir otomatik cihaz kontrolü
+- Interface down veya cihaza ulaşılamaz durumunda anlık uyarı (ana sayfa)
+- Gmail SMTP üzerinden otomatik e-posta alarm bildirimi
+- Interface down olaylarının tarihli geçmişi
+
+**Raporlama ve Export**
+- Cihaz listesini Excel (.xlsx) olarak dışa aktarma
+- Compliance raporunu PDF olarak dışa aktarma
+- Compliance skorları, backup ve audit log istatistikleri (Chart.js grafikleri)
+
+**Performans**
+- Thread-safe cache sistemi: Sayfa açılışlarında anlık yanıt
+- 60 saniyede bir arka planda otomatik cache yenileme
 
 ---
 
-##  Proje Yapısı
+## Kullanılan Teknolojiler
 
+| Teknoloji    | Amaç                                      |
+|--------------|-------------------------------------------|
+| Python 3     | Ana programlama dili                      |
+| Flask        | Web framework (backend)                   |
+| NAPALM       | Multi-vendor ağ otomasyon kütüphanesi     |
+| Netmiko      | SSH/Telnet tabanlı cihaz bağlantısı       |
+| SQLite       | Kullanıcı, cihaz ve audit log veritabanı  |
+| Flask-Login  | Kullanıcı oturum yönetimi                 |
+| Bootstrap 5  | Frontend UI framework                     |
+| Chart.js     | İstatistik grafikleri                     |
+| vis.js       | Ağ topoloji görselleştirme                |
+| openpyxl     | Excel export                              |
+| ReportLab    | PDF export                                |
+| GNS3         | Ağ simülasyon ortamı (Cisco 3725)         |
+
+---
+
+## Proje Yapısı
 staj-projesi/
-├── app.py                  # Flask backend, tüm route'lar
-├── mock_napalm.py          # Config yönetimi fonksiyonları
-├── compliance.py           # Güvenlik denetim kuralları (10 kural)
-├── database.py             # SQLite veritabanı işlemleri
+├── app.py # Flask backend, tüm route'lar ve iş mantığı
+├── mock_napalm.py # Config yönetimi: backup, diff, simülasyon
+├── mock_device.py # Cihaz veri çekimi ve cache yönetimi
+├── compliance.py # Güvenlik denetim kuralları (10 kural)
+├── database.py # SQLite veritabanı işlemleri
 ├── templates/
-│   ├── index.html          # Ana sayfa - cihaz listesi + uyarılar
-│   ├── detail.html         # Cihaz detay sayfası
-│   ├── config.html         # Config yönetimi sayfası
-│   ├── config_versions.html # Config versiyonlama
-│   ├── backups.html        # Backup geçmişi sayfası
-│   ├── compliance.html     # Compliance denetim sayfası
-│   ├── audit.html          # Audit log sayfası
-│   ├── topology.html       # Ağ topoloji haritası
-│   ├── stats.html          # İstatistik/grafik sayfası
-│   ├── device_history.html # Cihaz durum geçmişi
-│   ├── profile.html        # Kullanıcı profil sayfası
-│   ├── login.html          # Giriş sayfası
-│   ├── register.html       # Kayıt sayfası
-│   ├── add_device.html     # Cihaz ekleme sayfası
-│   ├── admin_users.html    # Kullanıcı yönetimi (admin)
-│   ├── email_settings.html # E-posta ayarları
-│   ├── change_password.html # Şifre değiştirme
-│   └── delete_account.html # Hesap silme
-├── backups/                # Config yedek dosyaları
-├── audit.db                # SQLite veritabanı
-└── requirements.txt        # Python bağımlılıkları
-
+│ ├── index.html # Ana sayfa — cihaz listesi ve uyarılar
+│ ├── detail.html # Cihaz detay sayfası
+│ ├── config.html # Config yönetimi sayfası
+│ ├── config_versions.html # Config versiyonlama ve diff
+│ ├── backups.html # Backup geçmişi sayfası
+│ ├── compliance.html # Compliance denetim sayfası
+│ ├── audit.html # Audit log sayfası
+│ ├── topology.html # Ağ topoloji haritası
+│ ├── stats.html # İstatistik ve grafik sayfası
+│ ├── device_history.html # Cihaz durum geçmişi
+│ ├── profile.html # Kullanıcı profil sayfası
+│ ├── login.html # Giriş sayfası
+│ ├── register.html # Kayıt sayfası
+│ ├── add_device.html # Cihaz ekleme sayfası
+│ ├── admin_users.html # Kullanıcı yönetimi (admin)
+│ ├── email_settings.html # E-posta ayarları
+│ ├── change_password.html # Şifre değiştirme
+│ └── delete_account.html # Hesap silme
+├── backups/ # Config yedek dosyaları
+├── audit.db # SQLite veritabanı
+└── requirements.txt # Python bağımlılıkları
 ---
 
-##  Kurulum
+## Kurulum
 
 **1. Repoyu klonla:**
 ```bash
@@ -92,8 +112,8 @@ cd Internship-project-of-automation-in-network
 **2. Virtual environment oluştur ve aktif et:**
 ```bash
 python -m venv venv
-venv\Scripts\activate        # Windows
-source venv/bin/activate     # Mac/Linux
+venv\Scripts\activate      # Windows
+source venv/bin/activate   # Mac/Linux
 ```
 
 **3. Bağımlılıkları kur:**
@@ -104,7 +124,8 @@ pip install -r requirements.txt
 **4. GNS3 ortamını hazırla:**
 - GNS3 ve VirtualBox kurulu olmalı
 - Cisco 3725 IOS image GNS3'e eklenmiş olmalı
-- En az 1 router çalışıyor olmalı (SSH/Telnet aktif)
+- En az 1 router veya switch çalışıyor olmalı (Telnet/SSH aktif)
+- Switch için: c3725 üzerine NM-16ESW modülü eklenebilir
 
 **5. Uygulamayı başlat:**
 ```bash
@@ -115,22 +136,21 @@ python app.py
 http://127.0.0.1:5000
 ---
 
-##  Gereksinimler
+## Gereksinimler
 flask
 napalm
 netmiko
 flask-login
 openpyxl
 reportlab
-pysnmp
 ---
 
-##  Yol Haritası
+## Yol Haritası
 
-- [x] Gerçek Cisco 3725 cihaz entegrasyonu (NAPALM/Netmiko via GNS3)
+- [x] Gerçek Cisco 3725 router ve NM-16ESW switch entegrasyonu (GNS3/Netmiko)
 - [x] Çok kullanıcılı sistem (kayıt, giriş, rol tabanlı yetkilendirme)
-- [x] Çok cihazlı envanter dashboard
-- [x] Config backup/diff/simülasyon/uygulama/versiyonlama
+- [x] Çok cihazlı envanter dashboard (router ve switch karışık topoloji)
+- [x] Config backup, diff, simülasyon, uygulama ve versiyonlama
 - [x] Config validasyonu (IP, interface, syntax kontrolü)
 - [x] Compliance denetim modülü (10 güvenlik kuralı)
 - [x] SQLite audit log sistemi (kullanıcıya özel)
@@ -139,7 +159,8 @@ pysnmp
 - [x] Ağ topoloji haritası (vis.js)
 - [x] Cache sistemi ile performans optimizasyonu
 - [x] Toplu işlem (backup ve compliance)
-- [x] Export özelliği (Excel + PDF)
-- [x] Ping & Port tarama
+- [x] Export özelliği (Excel ve PDF)
+- [x] Ping ve port tarama
 - [x] Cihaz durum geçmişi
 - [x] Profil sayfası (son giriş, rol, istatistikler)
+- [x] Tüm Python modülleri dokümante edildi (yorum satırları)
