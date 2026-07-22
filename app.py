@@ -508,7 +508,6 @@ def device_history(host):
 @login_required
 def config_page(host):
     """Config yönetimi ana sayfası — mevcut config gösterilir."""
-    """Config yönetimi ana sayfası — mevcut config gösterilir."""
     devices = get_user_devices(current_user.id)
     device = next((d for d in devices if d["host"] == host), None)
     current_config = device.get("config", "") if device else ""
